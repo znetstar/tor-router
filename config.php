@@ -5,7 +5,7 @@
 	define("INSTANCES", "10");
 	define("BALANCE_MODE", "roundrobin");
 	define("SOCKS_PORT", "9050");
-	define("CHECK_INSTALL", "polipo,haproxy,tor");
+	define("CHECK_INSTALL", "polipo,haproxy,tor,screen");
 	define("CACHE_DIR", "");
 	define("REMOTE_LOGGING_HOST", "");
 	define("PROXY_USERNAME", "da1b91ca-b548-48ab-8c42-a556dd95d2f0");
