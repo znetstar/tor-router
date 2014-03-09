@@ -17,5 +17,4 @@ echo "Setting new hostname"
 echo "$UUID.tor-routers" > /etc/hostname;
 
 echo "Hostname >>>$UUID.tor-routers<<<"
-/usr/local/bin/check_install.sh
 /sbin/reboot

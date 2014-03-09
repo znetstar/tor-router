@@ -38,6 +38,7 @@ tor-router-update:
 	chmod +x build/usr/local/bin/tor-router-update.sh
 
 install: all
+	build/usr/local/bin/check_install.sh
 	cp -rv build/* /
 
 rsyslog:
