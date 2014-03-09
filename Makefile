@@ -1,4 +1,4 @@
-all: clean multi-tor start_router haproxy check_install rc-local polipo-config tor-router-update rsyslog crontab
+all: clean multi-tor start_router haproxy check_install rc-local polipo-config tor-router-update rsyslog crontab test
 
 clean:
 	rm -rvf build
@@ -36,6 +36,11 @@ tor-router-update:
 	mkdir -pv build/usr/local/bin
 	php tor-router-update.sh.php > build/usr/local/bin/tor-router-update.sh
 	chmod +x build/usr/local/bin/tor-router-update.sh
+
+test:
+	mkdir -pv build/usr/local/bin
+	php test.sh.php > build/usr/local/bin/test.sh
+	chmod +x build/usr/local/bin/test.sh
 
 install: all
 	build/usr/local/bin/check_install.sh

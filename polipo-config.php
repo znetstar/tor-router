@@ -27,6 +27,7 @@ proxyAddress = "::0"        # both IPv4 and IPv6
 # something else than the host name:
 
 proxyName = "<?php echo gethostname(); ?>"
+proxyPort = <?php echo PROXY_PORT."\n"; ?>
 
 # Uncomment this if there's only one user using this instance of Polipo:
 
@@ -38,7 +39,7 @@ proxyName = "<?php echo gethostname(); ?>"
 
 # Uncomment this if you want to use a parent SOCKS proxy:
 
-socksParentProxy = "localhost:9050"
+socksParentProxy = "localhost:<?php echo SOCKS_PORT; ?>"
 socksProxyType = socks5
 
 

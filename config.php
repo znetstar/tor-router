@@ -2,6 +2,7 @@
 	define("BASE_PORT", "9051");
 	define("CONTROL_PORT", "15000");
 	define("TOR_DATA_DIR", "/data");
+	define("PROXY_PORT", "80");
 	define("INSTANCES", "10");
 	define("BALANCE_MODE", "roundrobin");
 	define("SOCKS_PORT", "9050");
