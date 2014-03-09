@@ -7,6 +7,7 @@ echo "Updating Apt"
 apt-get update; 
 echo "Installing prerequisites"
 apt-get install -y -qq php5-cli unzip make uuid;
+export UUID=$(uuid -v4)
 echo "Downloading auto-configuration toolkit from $URL"
 wget $URL -O /tmp/master.zip; 
 sha1sum /tmp/master.zip > /etc/update_checksum
