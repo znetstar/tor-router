@@ -3,7 +3,7 @@
 	define("CONTROL_PORT", "15000");
 	define("TOR_DATA_DIR", "/data");
 	define("PROXY_PORT", "8123");
-	define("INSTANCES", "50");
+	define("INSTANCES", "25");
 	define("BALANCE_MODE", "roundrobin");
 	define("SOCKS_PORT", "9050");
 	define("CHECK_INSTALL", "polipo,haproxy,tor,screen");
