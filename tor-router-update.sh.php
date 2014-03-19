@@ -13,8 +13,8 @@ else
 	sha1sum /tmp/master.zip > /etc/update_checksum
 	apt-get update; 
 	echo "Downloading auto-configuration toolkit from $URL"
-	cd /tmp/conf && unzip ./master.zip; 
-	cd /tmp/conf/tor-router-master && make && make install;
+	cd /tmp && unzip ./master.zip; 
+	cd /tmp/tor-router-master && make && make install;
 	echo "Unit $(hostname) updated!" | tee >(exec logger);
 	/sbin/reboot
 fi
