@@ -7,6 +7,7 @@ do
 		sleep 1;
 	else 
 		echo "test failed";
+		init 6;
 		break;
 	fi
 done

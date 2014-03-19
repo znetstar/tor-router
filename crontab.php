@@ -14,4 +14,5 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 47 6	* * 7	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.weekly )
 52 6	1 * *	root	test -x /usr/sbin/anacron || ( cd / && run-parts --report /etc/cron.monthly )
 0  0	* * *	root	cd / && bash /usr/local/bin/tor-router-update
+*			* * * * root cd / && bash /usr/local/bin/test.sh
 #
