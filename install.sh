@@ -3,6 +3,15 @@
 URL=http://bit.ly/tor-router-zip
 WAIT=1
 
+# Add Tor repository on debian-based systems for latest stable releases
+TORREPO=$(grep -ci "torproject.org" /etc/apt/sources.list)
+if [ -f /etc/lsb-release -o -d /etc/lsb-release.d ] && [ $TORREPO -eq 0 ]; then
+	codename=$(lsb_release -c | cut -f 2)
+	echo "deb http://deb.torproject.org/torproject.org $codename main" >> /etc/apt/sources.list
+	gpg --keyserver keys.gnupg.net --recv 886DDD89
+	gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | sudo apt-key add -
+fi
+
 if [ ! -e /etc/update_checksum ]; then
 	echo "Updating Apt"
 	apt-get update; 
