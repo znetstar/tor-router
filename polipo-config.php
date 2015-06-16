@@ -7,6 +7,8 @@
 # This file only contains some of the configuration variables; see the
 # list given by ``polipo -v'' and the manual for more.
 
+# Override logFile for ubuntu 14.04.1 Polipo 1.0.4.1-6
+logFile = /var/log/polipo/polipo.log
 
 ### Basic configuration
 ### *******************
