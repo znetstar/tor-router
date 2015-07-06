@@ -5,8 +5,8 @@ env:
 script:
   - wrapdocker &
   - sleep 5
-  - docker build -t docker.io/znetstar/tor-router:0.0.1 .
-  - docker push docker.io/znetstar/tor-router:0.0.1
+  - docker build -t registry.docker.io/znetstar/tor-router:0.0.1 .
+  - docker push registry.docker.io/znetstar/tor-router:0.0.1
   - start-stop-daemon --stop --pidfile "/var/run/docker.pid"
 notify:
   email:

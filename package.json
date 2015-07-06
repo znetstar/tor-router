@@ -10,7 +10,7 @@
   "repository": [
     {
       "type": "docker",
-      "url": "http://docker.io/znetstar"
+      "url": "http://registry.docker.io/znetstar"
     },
     {
       "type": "git",
