@@ -1,5 +1,0 @@
-export TOR_INSTANCES=${TOR_INSTANCES:=5}
-export TOR_PORT=${TOR_PORT:=9050}
-export INSTANCE_PREFIX="tor-"
-export IP_ADDRESS=$1
-export CONTROL_PORT_DIR=$2

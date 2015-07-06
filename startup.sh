@@ -1,9 +1,7 @@
 #!/bin/bash
 
-source env.sh
-
-TEMP_HA_CONFIG=$(mktemp)
-TOR_CMD='tor --MaxCircuitDirtiness 60 --RunAsDaemon 0 --CookieAuthentication 0 --controlport 0.0.0.0:9051 --HashedControlPassword 16:4E9480609FC7089F604C83E788481164C25C205288E17D9E5E73EB050B --PidFile tor.pid --SocksPort 0.0.0.0:9150 --DataDirectory /data/tor --ExcludeSingleHopRelays 0 --NewCircuitPeriod 30 --EnforceDistinctSubnets 0 --AllowDotExit 1'
+export TEMP_HA_CONFIG=$(mktemp)
+export TOR_CMD='tor --MaxCircuitDirtiness 60 --RunAsDaemon 0 --CookieAuthentication 0 --controlport 0.0.0.0:9051 --HashedControlPassword 16:4E9480609FC7089F604C83E788481164C25C205288E17D9E5E73EB050B --PidFile tor.pid --SocksPort 0.0.0.0:9150 --DataDirectory /data/tor --ExcludeSingleHopRelays 0 --NewCircuitPeriod 30 --EnforceDistinctSubnets 0 --AllowDotExit 1'
 
 index="0" 
 
@@ -21,7 +19,7 @@ do
 	echo "instnce $current_instance will be assigned control port control port $control_port"
 
 	echo "creating instance $current_instance..."
-	docker run --name $current_instance -d -v /data --restart="on-failure" nagev/tor $TOR_CMD
+	docker run --name $current_instance -d -v /data --restart="on-failure" znetstar/tor $TOR_CMD
 	echo "instance $current_instance created"
 	index=$[$index+1]
 done
@@ -65,7 +63,7 @@ do
 	current_instance=$INSTANCE_PREFIX$index
 	instances=$instances" --link $current_instance:$current_instance"
 	cat <<-EOF >> $TEMP_HA_CONFIG
-		server $current_instance $current_instance:9150 check
+		server $current_instance $current_instance:9050 check
 	EOF
 	index=$[$index+1]
 done
