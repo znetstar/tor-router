@@ -4,3 +4,4 @@ Dockerfile
 .gitignore
 .drone.yml
 Makefile
+run.sh

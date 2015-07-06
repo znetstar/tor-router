@@ -10,12 +10,15 @@ do
 	index=$[index+1]
 done
 
-echo "stop haproxy"
+echo "shutting down haproxy..."
 docker rm -f haproxy
 
-echo "closing port"
-iptables -A INPUT -p tcp --dport 9050 -j REJECT
+echo 'removing files...'
+rm -rf /tmp/haproxy.cfg
+rm -rf /tmp/tor
 
 #sleep 5
+
+echo 'tor router has shut down'
 
 exit 0 

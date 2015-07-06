@@ -1,6 +1,8 @@
-FROM ubuntu:15.04
+FROM php:5.4.42-cli
 
 VOLUME /var/lib/docker
+
+VOLUME /tmp
 
 COPY ./install_docker.sh /usr/local/bin/install_docker
 
@@ -10,7 +12,7 @@ RUN bash /usr/local/bin/install_docker
 
 COPY docker /usr/bin/docker
 
-ADD ./dind/wrapdocker /usr/local/bin/wrapdocker
+COPY ./dind/wrapdocker /usr/local/bin/wrapdocker
 
 RUN chmod +x /usr/local/bin/wrapdocker
 
@@ -21,6 +23,8 @@ COPY ./startup.sh /usr/local/bin/start-tor-router
 COPY ./tor-router.sh /usr/local/bin/tor-router
 
 COPY ./new_ip.sh /usr/local/bin/new-ip
+
+COPY ./haproxy-config.php /opt/haproxy-config.php
 
 RUN chmod -v +x /usr/local/bin/stop-tor-router
 

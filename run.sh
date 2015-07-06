@@ -1,7 +1,10 @@
 #!/bin/bash
 
+export TOR_INSTANCES=${TOR_INSTANCES:-5}
+export TOR_PORT=${TOR_PORT:-9050}
+
 apt-get update -y
-apt-get install -yqq curl git tar
+apt-get install -yqq curl git tar btrfs-tools
 
 echo 'installing docker...'
 
@@ -27,7 +30,7 @@ apt-get install -y lxc-docker-1.5.0
 
 # END: docker installer
 
-echo 'running tor-router...'
-/usr/bin/docker run --privileged -v /var/run/docker.sock:/var/run/docker.sock -p 9050:9050 --rm -it znetstar/tor-router:0.0.1
+echo 'starting up tor-router...'
+/usr/bin/docker run --rm -it -e TOR_INSTANCES=$TOR_INSTANCES -e TOR_PORT=$TOR_PORT --name tor-router --privileged -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker znetstar/tor-router:0.0.1
 
 exit 0

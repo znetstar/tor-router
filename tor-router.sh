@@ -6,8 +6,8 @@ sleep 5
 echo 'starting tor router...'
 /usr/local/bin/start-tor-router
 
-docker kill haproxy
-docker start -a -i haproxy
+docker logs -f haproxy &
+docker wait haproxy
 
 echo 'stopping tor router...'
 /usr/local/bin/stop-tor-router
