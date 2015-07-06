@@ -2,7 +2,7 @@ FROM ubuntu:15.04
 
 VOLUME /var/lib/docker
 
-COPY /usr/bin/docker /usr/bin/docker
+COPY docker /usr/bin/docker
 
 COPY ./install_docker.sh /usr/local/bin/install_docker
 
