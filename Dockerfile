@@ -2,6 +2,10 @@ FROM ubuntu:15.04
 
 VOLUME /var/lib/docker
 
+COPY ./install_docker.sh /usr/local/bin/install_docker
+
+RUN chmod +x /usr/local/bin/install_docker
+
 RUN bash /usr/local/bin/install_docker
 
 ADD ./dind/wrapdocker /usr/local/bin/wrapdocker
