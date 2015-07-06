@@ -31,5 +31,5 @@ apt-get install -y lxc-docker-1.5.0
 # END: docker installer
 
 echo 'starting up tor-router...'
-/usr/bin/docker run --rm -it -e TOR_INSTANCES=$TOR_INSTANCES -e TOR_PORT=$TOR_PORT --name tor-router --privileged -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker -v /usr/bin/docker:/usr/bin/docker:ro znetstar/tor-router:0.0.1
+/usr/bin/docker run --rm -it -e TOR_INSTANCES=$TOR_INSTANCES -e TOR_PORT=$TOR_PORT --name tor-router --privileged -v /tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker:/var/lib/docker -v /usr/bin/docker:/usr/bin/docker:ro znetstar/tor-router
 exit 0
