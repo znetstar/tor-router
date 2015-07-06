@@ -9,5 +9,5 @@ dind:
 .drone.yml:
 	wget -qO- http://bit.ly/drone-yml-php | php > .drone.yml
 
-install:
-	docker build -t znetstar/tor-router:0.0.1
+install: all
+	docker build -t znetstar/tor-router:0.0.1 .

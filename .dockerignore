@@ -2,3 +2,5 @@ Dockerfile
 .dockerignore
 .git
 .gitignore
+.drone.yml
+Makefile
