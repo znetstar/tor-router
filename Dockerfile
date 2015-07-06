@@ -10,8 +10,6 @@ RUN chmod +x /usr/local/bin/install_docker
 
 RUN bash /usr/local/bin/install_docker
 
-COPY docker /usr/bin/docker
-
 COPY ./dind/wrapdocker /usr/local/bin/wrapdocker
 
 RUN chmod +x /usr/local/bin/wrapdocker
