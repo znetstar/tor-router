@@ -1,0 +1,30 @@
+{
+  "name": "tor-router",
+  "version": "0.0.1",
+  "author": [
+    {
+      "name": "Zachary Boyd",
+      "email": "zacharyboyd@zacharyboyd.nyc"
+    }
+  ],
+  "repository": [
+    {
+      "type": "docker",
+      "url": "http://docker.io/znetstar"
+    },
+    {
+      "type": "git",
+      "url": "https://bitbucket.org/znetstar/tor-router"
+    }
+  ],
+  "homepage": "",
+  "dependencies": {
+
+  },
+  "scripts": {
+    "postinstall": "make"
+  },
+  "devDependencies": {
+
+  }
+}
