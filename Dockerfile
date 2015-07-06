@@ -30,8 +30,6 @@ RUN chmod -v +x /usr/local/bin/tor-router
 
 RUN chmod -v +x /usr/local/bin/new-ip
 
-EXPOSE 9050
-
 ENV TOR_INSTANCES 5
 
 ENV TOR_PORT 9050
