@@ -12,6 +12,8 @@ dind:
 docker:
 	cp -aruv /usr/bin/docker docker
 
-install: docker all
-
+build: docker all
 	docker build -t znetstar/tor-router:0.0.1 .
+
+install:
+	bash install.sh
