@@ -17,7 +17,7 @@ defaults
 	errorfile 503 /usr/local/etc/haproxy/errors/503.http
 	errorfile 504 /usr/local/etc/haproxy/errors/504.http
 
-listen socks *:<?php echo getenv('TOR_PORT').PHP_EOL; ?>
+listen socks *:9050
 <?php 
 	$instances = intval(getenv("TOR_INSTANCES"));
 
