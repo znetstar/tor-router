@@ -1,7 +1,2 @@
-Dockerfile
-.dockerignore
+node_modules
 .git
-.gitignore
-.drone.yml
-Makefile
-run.sh

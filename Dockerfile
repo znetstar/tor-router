@@ -1,41 +1,21 @@
-FROM php:5.4.42-cli
+FROM node:4.2.3
 
-VOLUME /var/lib/docker
+COPY . /app
 
-VOLUME /tmp
+WORKDIR /app
 
-COPY ./install_docker.sh /usr/local/bin/install_docker
+ENV DOCKER tcp://127.0.0.1:2375
 
-RUN chmod +x /usr/local/bin/install_docker
+ENV TORS 5
 
-RUN bash /usr/local/bin/install_docker
+ENV DNS_PORT 9053
 
-COPY ./dind/wrapdocker /usr/local/bin/wrapdocker
+ENV PORT 9050
 
-RUN chmod +x /usr/local/bin/wrapdocker
+EXPOSE 9053
 
-COPY ./shutdown.sh /usr/local/bin/stop-tor-router
+EXPOSE 9050
 
-COPY ./startup.sh /usr/local/bin/start-tor-router
+RUN npm install
 
-COPY ./tor-router.sh /usr/local/bin/tor-router
-
-COPY ./new_ip.sh /usr/local/bin/new-ip
-
-COPY ./haproxy-config.php /opt/haproxy-config.php
-
-RUN chmod -v +x /usr/local/bin/stop-tor-router
-
-RUN chmod -v +x /usr/local/bin/start-tor-router
-
-RUN chmod -v +x /usr/local/bin/tor-router
-
-RUN chmod -v +x /usr/local/bin/new-ip
-
-ENV TOR_INSTANCES 5
-
-ENV TOR_PORT 9050
-
-ENV INSTANCE_PREFIX tor-
-
-CMD ["/usr/local/bin/tor-router"]
+CMD /app/run.sh

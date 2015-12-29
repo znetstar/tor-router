@@ -1,0 +1,4 @@
+Log notice stdout
+SocksPort 0.0.0.0:9050
+DataDirectory /data
+DNSPort 0.0.0.0:9053
