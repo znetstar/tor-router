@@ -13,11 +13,16 @@ const program = require('commander');
 
 program
   .version('0.0.1')
-  .option('-H, --docker [unix:///var/run/docker.sock]', 'Docker Host', (parseInt(process.env.DOCKER_HOST) || 'unix:///var/run/docker.sock'))
-  .option('-j, --tors [1]', 'Number of Tor Instances', (parseInt(process.env.TOR_INSTANCES) || 1))
-  .option('-p, --port [9050]', 'SOCKS Port', (parseInt(process.env.PORT) || 9050))
-  .option('-d, --dns [9053]', 'DNS Port', (parseInt(process.env.DNS_PORT) || 9053))
+  .option('-H, --docker [unix:///var/run/docker.sock]', 'Docker Host')
+  .option('-j, --tors [1]', 'Number of Tor Instances', parseInt)
+  .option('-p, --port [9050]', 'SOCKS Port', parseInt)
+  .option('-d, --dns [9053]', 'DNS Port', parseInt)
   .parse(process.argv);
+
+program.docker = program.docker || 'unix:///var/run/docker.sock';
+program.tors = program.tors || 1;
+program.port = program.port || 9050;
+program.dns = program.dns || 9053;
 
 var docker_url = (url.parse(program.docker));
 
