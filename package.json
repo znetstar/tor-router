@@ -1,6 +1,7 @@
 {
   "name": "tor-router",
   "version": "0.0.1",
+  "bin": "bin/tor-router.js",
   "author": [
     {
       "name": "Zachary Boyd",
