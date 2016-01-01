@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "bin": "bin/tor-router.js",
   "author": [
     {
