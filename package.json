@@ -2,6 +2,7 @@
   "name": "tor-router",
   "version": "1.0.0",
   "bin": "bin/tor-router.js",
+  "main": "lib/index.js",
   "author": [
     {
       "name": "Zachary Boyd",
@@ -18,7 +19,6 @@
       "url": "https://bitbucket.org/znetstar/tor-router"
     }
   ],
-  "homepage": "",
   "dependencies": {
     "async": "^1.5.0",
     "base32": "0.0.6",
@@ -35,5 +35,6 @@
     "winston": "^2.1.1"
   },
   "scripts": {},
-  "devDependencies": {}
+  "devDependencies": {},
+  "license": "Apache License"
 }
