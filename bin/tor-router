@@ -1,0 +1,54 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var TorRouter = require('../');
+var SOCKSServer = TorRouter.SOCKSServer;
+var DNSServer = TorRouter.DNSServer;
+var TorPool = TorRouter.TorPool;
+var winston = require('winston')
+
+program
+  .version('0.0.1')
+  .option('-j, --instances <1>', 'Number of tor instances', Number)
+  .option('-s, --socksPort [9050]', 'SOCKS Server port', Number)
+  .option('-d, --dnsPort [9053]', 'DNS Server port', Number)
+  .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging', Number)
+  .parse(process.argv);
+
+var logger = new (winston.Logger)({
+transports: [
+  new (winston.transports.Console)({ level: (program.logLevel || 'info') })
+]
+});
+
+let instances = program.instances || Number(process.env.INSTANCES);
+let log_level = program.logLevel || process.env.LOG_LEVEL;
+let socks_port = program.socksPort || Number(process.env.SOCKS_PORT);
+let dns_port = program.dnsPort || Number(process.env.DNS_PORT);
+
+if (!instances) {
+	logger.error('Number of instances not specified');
+	process.exit(1);
+}
+
+let pool = new TorPool('tor', null, logger);
+
+if (log_level === 'null') 
+	logger = void(0);
+
+if (socks_port) {
+	let socks = new SOCKSServer(pool, logger);
+	logger && logger.info(`[socks]: Listening on ${socks_port}`);
+	socks.listen((socks_port || 9050));
+}
+
+if (dns_port) {
+	let dns = new DNSServer(pool, logger);
+	logger && logger.info(`[dns]: Listening on ${socks_port}`);
+	dns.serve((dns_port || 9050));
+}
+
+logger && logger.info('[tor]: starting tor...')
+pool.create(instances, (err) => {
+	logger && logger.info('[tor]: tor started');
+});

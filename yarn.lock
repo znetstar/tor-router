@@ -748,9 +748,9 @@ socks5-http-client@^1.0.2:
   dependencies:
     socks5-client "~1.1.0"
 
-socksv5@^0.0.6:
+"socksv5@git+https://github.com/lee-elenbaas/socksv5.git":
   version "0.0.6"
-  resolved "https://registry.yarnpkg.com/socksv5/-/socksv5-0.0.6.tgz#1327235ff7e8de21ac434a0a579dc69c3f071061"
+  resolved "git+https://github.com/lee-elenbaas/socksv5.git#7039cb6aeb39fa3187b327bb2de5d1aedaae6a56"
   dependencies:
     ipv6 "*"
 

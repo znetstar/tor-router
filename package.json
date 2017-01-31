@@ -16,11 +16,12 @@
   },
   "dependencies": {
     "async": "^2.1.4",
+    "commander": "^2.9.0",
     "eventemitter2": "^3.0.0",
     "get-port": "^2.1.0",
     "lodash": "^4.17.4",
     "native-dns": "https://github.com/znetstar/node-dns.git",
-    "socksv5": "^0.0.6",
+    "socksv5": "git+https://github.com/lee-elenbaas/socksv5.git",
     "temp": "^0.8.3",
     "winston": "^2.3.1"
   }

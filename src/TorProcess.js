@@ -9,10 +9,11 @@ const EventEmitter = require('eventemitter2').EventEmitter2;
 temp.track();
 
 class TorProcess extends EventEmitter {
-	constructor(tor_path, config) {
+	constructor(tor_path, config, logger) {
 		super();
 
 		this.tor_path = tor_path || 'tor';
+		this.logger = logger;
 
 		this.tor_config = _.extend({ 
 			Log: 'notice stdout',
@@ -78,15 +79,28 @@ class TorProcess extends EventEmitter {
 				this.emit('error', new Error(error_message));
 			});
 
+			this.once('ready', () => {
+				this.logger && this.logger.info(`[tor-${tor.pid}]: tor is ready`);
+			});
+
 			tor.stdout.on('data', (data) => {
 				let text = new Buffer(data).toString('utf8');
-				
+				let msg = text.split('] ').pop();
 				if (text.indexOf('Bootstrapped 100%: Done') !== -1){
 					this.emit('ready');
 				}
 
 				if (text.indexOf('[err]') !== -1) {
-					this.emit('error', new Error(text.split('] ').pop()));
+					this.emit('error', new Error(msg));
+					this.logger && this.logger.error(`[tor-${tor.pid}]: ${msg}`);
+				}
+
+				else if (text.indexOf('[notice]') !== -1) {
+					this.logger && this.logger.debug(`[tor-${tor.pid}]: ${msg}`);
+				}
+
+				else if (text.indexOf('[warn]') !== -1) {
+					this.logger && this.logger.warn(`[tor-${tor.pid}]: ${msg}`);
 				}
 			});
 

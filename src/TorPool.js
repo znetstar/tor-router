@@ -26,7 +26,7 @@ const _ = require('lodash');
 temp.track();
 
 class TorPool extends EventEmitter {
-	constructor(tor_path, config) {
+	constructor(tor_path, config, logger) {
 		super();
 
 		config = config || {};
@@ -34,20 +34,21 @@ class TorPool extends EventEmitter {
 		this.tor_config = config;
 		this.tor_path = tor_path || 'tor';
 		this._instances = [];
+		this.logger = logger;
 	}
 
 	get instances() { return this._instances.slice(0); }
 
 	create_instance(callback) {
 		let config = _.extend({}, this.tor_config)
-		let instance = new TorProcess(this.tor_path, config);
+		let instance = new TorProcess(this.tor_path, config, this.logger);
 		instance.create((error) => {
 			if (error) return callback(error);
 
 			this._instances.push(instance);
 			instance.once('error', callback)
 			instance.once('ready', () => {
-				callback(null, instance);
+				callback && callback(null, instance);
 			});
 		});
 	}
@@ -57,11 +58,11 @@ class TorPool extends EventEmitter {
 
 		async.map(Array.from(Array(Number(instances))), (nothing, next) => {
 			this.create_instance(next);
-		}, callback);
+		}, (callback || (() => {})));
 	}
 
 	next() {
-		this._instances.rotate();
+		this._instances = this._instances.rotate(1);
 		return this.instances[0];
 	}
 
