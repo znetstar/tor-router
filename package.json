@@ -6,7 +6,7 @@
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
   "license": "MIT",
   "scripts": {
-    "start": "bin/tor-router",
+    "start": "bin/tor-router -j 3 -s 9050",
     "test": "mocha test/test.js"
   },
   "devDependencies": {
