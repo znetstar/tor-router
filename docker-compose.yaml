@@ -2,9 +2,6 @@ version: '2'
 services:
   tor_router:
     build: .
-    volumes:
-    - "./src:/app/src"
-    - "./test:/app/test"
     ports:
     - "9050:9050"
     - "53:53/udp"
