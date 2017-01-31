@@ -1,0 +1,99 @@
+const spawn = require('child_process').spawn;
+const _ = require('lodash');
+const temp = require('temp');
+const async = require('async');
+const fs = require('fs');
+const getPort = require('get-port');
+const EventEmitter = require('eventemitter2').EventEmitter2;
+
+temp.track();
+
+class TorProcess extends EventEmitter {
+	constructor(tor_path, config) {
+		super();
+
+		this.tor_path = tor_path || 'tor';
+
+		this.tor_config = _.extend({ 
+			Log: 'notice stdout',
+			DataDirectory: temp.mkdirSync(),
+			ExcludeSingleHopRelays: '0',
+			NewCircuitPeriod: '10',
+			EnforceDistinctSubnets: '0' 
+		}, (config || { }));
+	}
+
+	exit() {
+		this.process.kill('SIGKILL');
+	}
+
+	new_ip() {
+		this.process.kill('SIGHUP');
+	}
+
+	get dns_port() {
+		return this._dns_port || null;
+	}
+
+	get socks_port() {
+		return this._socks_port || null;
+	}
+
+	create(callback) {
+		async.auto({
+			dnsPort: (callback) => getPort().then(port => callback(null, port)),
+			socksPort: (callback) => getPort().then(port => callback(null, port)),
+			configPath: ['dnsPort', 'socksPort', (context, callback) => {
+				let options = {
+					DNSPort: `127.0.0.1:${context.dnsPort}`,
+					SocksPort: `127.0.0.1:${context.socksPort}`,
+				};
+				let config = _.extend(_.extend({}, this.tor_config), options);
+				let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join("\n");
+				
+				temp.open('tor-router', (err, info) => {
+					if (err) return callback(err);
+
+					fs.write(info.fd, text);
+					fs.close(info.fd, (err) => {
+						callback(err, info.path);
+					});
+				});
+			}]
+		}, (error, context) => {
+			if (error) callback(error);
+
+			this._dns_port = context.dnsPort;
+			this._socks_port = context.socksPort;
+
+			let tor = spawn(this.tor_path, ['-f', context.configPath], {
+				stdio: ['ignore', 'pipe', 'pipe'],
+				detached: false,
+				shell: '/bin/bash'
+			});
+
+			tor.stderr.on('data', (data) => {
+				let error_message = new Buffer(data).toString('utf8');
+
+				this.emit('error', new Error(error_message));
+			});
+
+			tor.stdout.on('data', (data) => {
+				let text = new Buffer(data).toString('utf8');
+				
+				if (text.indexOf('Bootstrapped 100%: Done') !== -1){
+					this.emit('ready');
+				}
+
+				if (text.indexOf('[err]') !== -1) {
+					this.emit('error', new Error(text.split('] ').pop()));
+				}
+			});
+
+			this.process = tor;
+			callback && callback(null, tor);
+		});
+	}
+};
+
+module.exports = TorProcess;

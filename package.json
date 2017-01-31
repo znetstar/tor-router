@@ -1,40 +1,27 @@
 {
   "name": "tor-router",
-  "version": "1.0.0",
-  "bin": "bin/tor-router.js",
-  "main": "lib/index.js",
-  "author": [
-    {
-      "name": "Zachary Boyd",
-      "email": "zacharyboyd@zacharyboyd.nyc"
-    }
-  ],
-  "repository": [
-    {
-      "type": "docker",
-      "url": "http://registry.docker.io/znetstar"
-    },
-    {
-      "type": "git",
-      "url": "https://bitbucket.org/znetstar/tor-router"
-    }
-  ],
-  "dependencies": {
-    "async": "^1.5.0",
-    "base32": "0.0.6",
-    "commander": "^2.9.0",
-    "dockerode": "^2.2.7",
-    "ejs": "^2.3.4",
-    "event-stream": "^3.3.2",
-    "lodash": "^3.10.1",
-    "native-dns": "^0.7.0",
-    "shelljs": "^0.5.3",
-    "socksv5": "0.0.6",
-    "temp": "^0.8.3",
-    "uuid": "^2.0.1",
-    "winston": "^2.1.1"
+  "version": "3.0.0",
+  "main": "src/index.js",
+  "repository": "git@github.com:znetstar/tor-router.git",
+  "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
+  "license": "MIT",
+  "scripts": {
+    "start": "bin/tor-router",
+    "test": "mocha test/test.js"
   },
-  "scripts": {},
-  "devDependencies": {},
-  "license": "Apache License"
+  "devDependencies": {
+    "mocha": "^3.2.0",
+    "request": "^2.79.0",
+    "socks5-http-client": "^1.0.2"
+  },
+  "dependencies": {
+    "async": "^2.1.4",
+    "eventemitter2": "^3.0.0",
+    "get-port": "^2.1.0",
+    "lodash": "^4.17.4",
+    "native-dns": "https://github.com/znetstar/node-dns.git",
+    "socksv5": "^0.0.6",
+    "temp": "^0.8.3",
+    "winston": "^2.3.1"
+  }
 }
