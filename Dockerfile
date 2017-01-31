@@ -8,6 +8,8 @@ ENV DNS_PORT 53
 
 ENV SOCKS_PORT 9050
 
+ENV INSTANCES 3
+
 ADD https://deb.nodesource.com/setup_7.x /nodejs_install
 
 RUN bash /nodejs_install
