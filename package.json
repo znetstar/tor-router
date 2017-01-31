@@ -5,6 +5,9 @@
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
   "license": "MIT",
+  "bin": {
+    "tor-router": "bin/tor-router"
+  },
   "scripts": {
     "start": "bin/tor-router -j 3 -s 9050",
     "test": "mocha test/test.js"

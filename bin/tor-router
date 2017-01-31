@@ -39,13 +39,13 @@ if (log_level === 'null')
 if (socks_port) {
 	let socks = new SOCKSServer(pool, logger);
 	logger && logger.info(`[socks]: Listening on ${socks_port}`);
-	socks.listen((socks_port || 9050));
+	socks.listen((socks_port));
 }
 
 if (dns_port) {
 	let dns = new DNSServer(pool, logger);
-	logger && logger.info(`[dns]: Listening on ${socks_port}`);
-	dns.serve((dns_port || 9050));
+	logger && logger.info(`[dns]: Listening on ${dns_port}`);
+	dns.serve((dns_port));
 }
 
 logger && logger.info('[tor]: starting tor...')
