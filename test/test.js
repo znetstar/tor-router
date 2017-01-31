@@ -120,7 +120,6 @@ describe('DNSServer', function () {
 
 		it('should be able to resolve "google.com" ', function (done) {
 			getPort().then((port) => {
-				console.log(port)
 				dns_server.serve(port);
 
 				let req = dns.Request({
@@ -135,7 +134,6 @@ describe('DNSServer', function () {
 				});
 
 				req.on('message', (e, m) => {
-					console.log(e,m)
 					done && done(((!m) || (!m.answer.length)) && new Error('Unable to resolve host'));
 					done = null;
 				});
