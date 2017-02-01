@@ -22,6 +22,7 @@ WORKDIR /app
 
 RUN npm install
 
+# Grab the current local timezone from an external api and save it into /etc/timezone
 RUN curl -sL http://ip-api.com/json | node -e "process.stdin.resume(); process.stdin.on('data', (data) => { process.stdout.write(JSON.parse(data.toString('utf8')).timezone); process.exit(0); });" > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
 
 CMD npm start
