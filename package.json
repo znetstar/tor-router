@@ -9,7 +9,7 @@
     "tor-router": "bin/tor-router"
   },
   "scripts": {
-    "start": "bin/tor-router",
+    "start": "bin/tor-router -j 3",
     "test": "mocha test/test.js"
   },
   "devDependencies": {
