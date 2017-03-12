@@ -25,8 +25,8 @@ transports: [
 
 let instances = program.instances || Number(process.env.INSTANCES);
 let log_level = program.logLevel || process.env.LOG_LEVEL;
-let socks_port = program.socksPort || Number(process.env.SOCKS_PORT);
-let dns_port = program.dnsPort || Number(process.env.DNS_PORT);
+let socks_port = (program.socksPort === true ? 9050 : program.socksPort) || Number(process.env.SOCKS_PORT);
+let dns_port = (program.dnsPort === true ? 9053 : program.dnsPort) || Number(process.env.DNS_PORT);
 
 if (!instances) {
 	logger.error('Number of instances not specified');
