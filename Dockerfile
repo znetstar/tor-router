@@ -14,7 +14,7 @@ ENV PATH $PATH:/app/bin
 
 ADD tor-sources.list /etc/apt/sources.list.d/tor.list
 
-ADD https://deb.nodesource.com/setup_7.x /tmp/nodejs_install
+ADD https://deb.nodesource.com/setup_6.x /tmp/nodejs_install
 
 RUN bash /tmp/nodejs_install
 
