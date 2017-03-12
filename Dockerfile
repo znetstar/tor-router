@@ -10,6 +10,8 @@ ENV SOCKS_PORT 9050
 
 ENV INSTANCES 3
 
+ENV PATH $PATH:/app/bin
+
 ADD tor-sources.list /etc/apt/sources.list.d/tor.list
 
 ADD https://deb.nodesource.com/setup_7.x /tmp/nodejs_install
