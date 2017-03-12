@@ -1,0 +1,7 @@
+image: znetstar/tor-router
+
+pipelines:
+  default:
+    - step:
+        script:
+          - npm test

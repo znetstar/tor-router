@@ -10,9 +10,9 @@ ENV SOCKS_PORT 9050
 
 ENV INSTANCES 3
 
-ADD https://deb.nodesource.com/setup_7.x /nodejs_install
+ADD https://deb.nodesource.com/setup_7.x /tmp/nodejs_install
 
-RUN bash /nodejs_install
+RUN bash /tmp/nodejs_install
 
 RUN apt install -y nodejs tor git
 
