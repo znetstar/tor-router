@@ -4,8 +4,7 @@ pipelines:
   default:
     - step:
         script:
-          - cp tor-sources.list /etc/apt/sources.list.d/tor.list
-          - apt update && apt install -y --allow-unauthenticated deb.torproject.org-keyring curl tor git
+          - apt update && apt install -y curl tor git
           - curl -sL https://deb.nodesource.com/setup_7.x > /tmp/node_install
           - bash /tmp/node_install && apt install -y nodejs
           - npm install
