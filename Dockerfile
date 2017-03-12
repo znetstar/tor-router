@@ -27,6 +27,5 @@ WORKDIR /app
 RUN npm install
 
 # Grab the current local timezone from an external api and save it into /etc/timezone, otherwise Tor will complain and won't start
-RUN bash /app/bin/get-timezone.sh > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
 
-CMD npm start
+CMD bash /app/bin/get-timezone.sh > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata && npm start
