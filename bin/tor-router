@@ -31,8 +31,6 @@ let socks_port = (program.socksPort === true ? 9050 : program.socksPort) || Numb
 let dns_port = (program.dnsPort === true ? 9053 : program.dnsPort) || Number(process.env.DNS_PORT);
 let control_port = (program.controlPort === true ? 9077 : program.controlPort) || Number(process.env.CONTROL_PORT) || 9077;
 
-let pool = new TorPool('tor', null, logger);
-
 if (log_level === 'null') 
 	logger = void(0);
 
@@ -48,7 +46,7 @@ if (dns_port) {
 
 if (instances) {
 	logger && logger.info('[tor]: starting ${instances} tor instances...')
-	pool.create(instances, (err) => {
+	control.torPool.create(instances, (err) => {
 		logger && logger.info('[tor]: tor started');
 	});
 }

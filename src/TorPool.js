@@ -44,8 +44,8 @@ class TorPool extends EventEmitter {
 		let instance = new TorProcess(this.tor_path, config, this.logger);
 		instance.create((error) => {
 			if (error) return callback(error);
-
 			this._instances.push(instance);
+
 			instance.once('error', callback)
 			instance.once('ready', () => {
 				callback && callback(null, instance);
@@ -55,7 +55,6 @@ class TorPool extends EventEmitter {
 
 	create(instances, callback) {
 		if (!Number(instances)) return callback(null, []);
-
 		async.map(Array.from(Array(Number(instances))), (nothing, next) => {
 			this.create_instance(next);
 		}, (callback || (() => {})));
