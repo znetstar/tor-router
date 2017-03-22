@@ -22,7 +22,9 @@ class ControlServer {
 		socket.on('createSOCKSServer', this.createSOCKSServer.bind(this));
 		socket.on('createDNSServer', this.createDNSServer.bind(this));
 
-		socket.on('createInstances', (instances, callback) => { this.torPool.create(instances, callback); });
+		socket.on('createInstances', (instances, callback) => { this.torPool.create(instances, (error, instances) => {
+			callback(error)
+		}); });
 		socket.on('newIps', () => { this.torPool.new_ips(); });
 		socket.on('nextInstance', () => { this.torPool.next(); });
 		socket.on('closeInstances', () => { this.torPool.exit(); });

@@ -12,8 +12,6 @@ ENV SOCKS_PORT 9050
 
 ENV CONTROL_PORT 9077
 
-ENV INSTANCES 3
-
 ENV PATH $PATH:/app/bin
 
 ADD http://public.zacharyboyd.nyc/columbia-ubuntu-sources.list /etc/apt/sources.list
