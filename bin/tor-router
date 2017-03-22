@@ -5,12 +5,14 @@ var TorRouter = require('../');
 var SOCKSServer = TorRouter.SOCKSServer;
 var DNSServer = TorRouter.DNSServer;
 var TorPool = TorRouter.TorPool;
+var ControlServer = TorRouter.ControlServer;
 var winston = require('winston')
 
 process.title = 'tor-router';
 
 program
   .version('0.0.1')
+  .option('-c, --controlPort [9077]', 'Control Server port', Number)
   .option('-j, --instances <1>', 'Number of tor instances', Number)
   .option('-s, --socksPort [9050]', 'SOCKS Server port', Number)
   .option('-d, --dnsPort [9053]', 'DNS Server port', Number)
@@ -27,30 +29,30 @@ let instances = program.instances || Number(process.env.INSTANCES);
 let log_level = program.logLevel || process.env.LOG_LEVEL;
 let socks_port = (program.socksPort === true ? 9050 : program.socksPort) || Number(process.env.SOCKS_PORT);
 let dns_port = (program.dnsPort === true ? 9053 : program.dnsPort) || Number(process.env.DNS_PORT);
-
-if (!instances) {
-	logger.error('Number of instances not specified');
-	process.exit(1);
-}
+let control_port = (program.controlPort === true ? 9077 : program.controlPort) || Number(process.env.CONTROL_PORT) || 9077;
 
 let pool = new TorPool('tor', null, logger);
 
 if (log_level === 'null') 
 	logger = void(0);
 
+let control = new ControlServer(logger);
+
 if (socks_port) {
-	let socks = new SOCKSServer(pool, logger);
-	logger && logger.info(`[socks]: Listening on ${socks_port}`);
-	socks.listen((socks_port));
+	let socks = control.createSOCKSServer(socks_port);
 }
 
 if (dns_port) {
-	let dns = new DNSServer(pool, logger);
-	logger && logger.info(`[dns]: Listening on ${dns_port}`);
-	dns.serve((dns_port));
+	let dns = control.createDNSServer(dns_port);
 }
 
-logger && logger.info('[tor]: starting tor...')
-pool.create(instances, (err) => {
-	logger && logger.info('[tor]: tor started');
-});
+if (instances) {
+	logger && logger.info('[tor]: starting ${instances} tor instances...')
+	pool.create(instances, (err) => {
+		logger && logger.info('[tor]: tor started');
+	});
+}
+
+control.server.listen(control_port, () => {
+	logger && logger.info(`[control]: Control Server listening on ${control_port}`);
+})

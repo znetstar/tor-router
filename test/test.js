@@ -6,6 +6,7 @@ temp.track();
 const TorRouter = require('../');
 const getPort = require('get-port');
 const dns = require('native-dns');
+const io = require('socket.io-client');
 
 const get_ip = function (callback) {
 	request({
@@ -23,6 +24,74 @@ const get_ip = function (callback) {
 		callback(error || (!body && new Error("Couldn't grab IP")), ip)
 	});
 };
+
+
+describe('ControlServer', function () {
+	let ports = {};
+	var controlServer;
+	var client;
+
+	before((done) => {
+		async.autoInject({
+			dnsPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
+			socksPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
+			controlPort: (cb) => { getPort().then((port) => { cb(null, port); }) }
+		}, (error, context) => {
+			ports = context;
+
+
+			done(error);
+		});
+	});
+
+	controlServer = new ControlServer();
+
+	describe('#listen(port, callback)', () => {
+		it('should listen on the control port', (done) => { controlServer.listen(ports.controlPort, done); })
+		it('should connect to control server', (done) => {
+			client = io.connect(`ws://127.0.0.1:${ports.controlPort}`);
+			client.once('connect_error', (err) => {
+				done(err);
+			});
+
+			client.once('connected', () => {
+				done();
+			})
+		});
+	});
+
+	describe('#createTorPool(options)', function () {
+		it('should create a tor pool', () => {
+			client.emit('createTorPool', {});
+		});
+	});
+
+	describe('#createSOCKSServer(port)', function () {
+		it('should create a socks server', () => {
+			client.emit('createSOCKSServer', ports.socksPort);
+		});
+	});
+
+	describe('#createInstances(instances, callback)', function () {
+		it('should create 1 instance', function (done) {
+			client.emit('createInstances', 1, (err) => {
+				if (err) return done(error);
+
+				done(((controlServer.torPool.instances.length !== 1) && new Error(`It doesn't have 1 instance`)));
+			});
+		})
+	})
+
+	describe('#newIps()', function (done) {
+		done();
+	});
+
+	after(() => {
+		controlServer.torPool.exit();
+		client.close();
+		controlServer.close();
+	});
+});
 
 
 describe('TorProcess', function () {
@@ -204,3 +273,4 @@ describe('SOCKSServer', function () {
 		});
 	});
 });
+
