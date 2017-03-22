@@ -4,3 +4,4 @@ Dockerfile
 yarn.lock
 npm-debug.log
 docker-compose.yml
+.env
