@@ -7,6 +7,7 @@ const TorRouter = require('../');
 const getPort = require('get-port');
 const dns = require('native-dns');
 const io = require('socket.io-client');
+const _ = require('lodash');
 
 const get_ip = function (callback) {
 	request({
@@ -37,20 +38,21 @@ describe('ControlServer', function () {
 			socksPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
 			controlPort: (cb) => { getPort().then((port) => { cb(null, port); }) }
 		}, (error, context) => {
-			ports = context;
-
+			_.extend(ports, context);
 
 			done(error);
 		});
 	});
 
-	controlServer = new ControlServer();
+	controlServer = new TorRouter.ControlServer();
 
 	describe('#listen(port, callback)', () => {
 		it('should listen on the control port', (done) => { controlServer.listen(ports.controlPort, done); })
 		it('should connect to control server', (done) => {
 			client = io.connect(`ws://127.0.0.1:${ports.controlPort}`);
+
 			client.once('connect_error', (err) => {
+				console.log(err)
 				done(err);
 			});
 
@@ -73,6 +75,7 @@ describe('ControlServer', function () {
 	});
 
 	describe('#createInstances(instances, callback)', function () {
+		this.timeout(Infinity);
 		it('should create 1 instance', function (done) {
 			client.emit('createInstances', 1, (err) => {
 				if (err) return done(error);
@@ -83,7 +86,27 @@ describe('ControlServer', function () {
 	})
 
 	describe('#newIps()', function (done) {
-		done();
+		var oldip;
+		this.timeout(Infinity);
+		it('should grab the current ip', (done) => {
+			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
+				oldip = ip;
+				done(error);
+			});
+		});
+		
+		it('should change the ip', (done) => {
+			client.emit('newIps');
+			setTimeout(() => {
+				done();
+			}, 1000);
+		});
+
+		it('should have a diffrent ip', (done) => {
+			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
+				done(((oldip === ip) && new Error("ip hasn't changed")));
+			});			
+		});
 	});
 
 	after(() => {

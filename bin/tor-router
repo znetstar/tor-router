@@ -36,6 +36,10 @@ if (log_level === 'null')
 
 let control = new ControlServer(logger);
 
+process.on('SIGHUP', () => {
+	control.torPool.new_ips();
+});
+
 if (socks_port) {
 	let socks = control.createSOCKSServer(socks_port);
 }
