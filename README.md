@@ -37,7 +37,7 @@ A socket.io server included will listen on port 9077 by default. Using the socke
 
 Example (in node):
 
-`
+```
 	var client = require('socket.io-client').connect('ws://localhost:9077');
 	client.emit('createInstances', 3, (error) => {
 		if (error) return;
@@ -45,7 +45,7 @@ Example (in node):
 		client.emit('newIps');
 		console.log('clients have new ips!')
 	});
-`
+```
 
 ## Test
 
