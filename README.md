@@ -45,3 +45,7 @@ Example (in node):
 		console.log('clients have new ips!')
 	});
 `
+
+## Test
+
+Tests are written in mocha, just run `npm test`
