@@ -27,94 +27,94 @@ const get_ip = function (callback) {
 };
 
 
-describe('ControlServer', function () {
-	let ports = {};
-	var controlServer;
-	var client;
+// describe('ControlServer', function () {
+// 	let ports = {};
+// 	var controlServer;
+// 	var client;
 
-	before((done) => {
-		async.autoInject({
-			dnsPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
-			socksPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
-			controlPort: (cb) => { getPort().then((port) => { cb(null, port); }) }
-		}, (error, context) => {
-			_.extend(ports, context);
+// 	before((done) => {
+// 		async.autoInject({
+// 			dnsPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
+// 			socksPort: (cb) => { getPort().then((port) => { cb(null, port); }) },
+// 			controlPort: (cb) => { getPort().then((port) => { cb(null, port); }) }
+// 		}, (error, context) => {
+// 			_.extend(ports, context);
 
-			done(error);
-		});
-	});
+// 			done(error);
+// 		});
+// 	});
 
-	controlServer = new TorRouter.ControlServer();
+// 	controlServer = new TorRouter.ControlServer();
 
-	describe('#listen(port, callback)', () => {
-		it('should listen on the control port', (done) => { controlServer.listen(ports.controlPort, done); })
-		it('should connect to control server', (done) => {
-			client = io.connect(`ws://127.0.0.1:${ports.controlPort}`);
+// 	describe('#listen(port, callback)', () => {
+// 		it('should listen on the control port', (done) => { controlServer.listen(ports.controlPort, done); })
+// 		it('should connect to control server', (done) => {
+// 			client = io.connect(`ws://127.0.0.1:${ports.controlPort}`);
 
-			client.once('connect_error', (err) => {
-				console.log(err)
-				done(err);
-			});
+// 			client.once('connect_error', (err) => {
+// 				console.log(err)
+// 				done(err);
+// 			});
 
-			client.once('connected', () => {
-				done();
-			})
-		});
-	});
+// 			client.once('connected', () => {
+// 				done();
+// 			})
+// 		});
+// 	});
 
-	describe('#createTorPool(options)', function () {
-		it('should create a tor pool', () => {
-			client.emit('createTorPool', {});
-		});
-	});
+// 	describe('#createTorPool(options)', function () {
+// 		it('should create a tor pool', () => {
+// 			client.emit('createTorPool', {});
+// 		});
+// 	});
 
-	describe('#createSOCKSServer(port)', function () {
-		it('should create a socks server', () => {
-			client.emit('createSOCKSServer', ports.socksPort);
-		});
-	});
+// 	describe('#createSOCKSServer(port)', function () {
+// 		it('should create a socks server', () => {
+// 			client.emit('createSOCKSServer', ports.socksPort);
+// 		});
+// 	});
 
-	describe('#createInstances(instances, callback)', function () {
-		this.timeout(Infinity);
-		it('should create 1 instance', function (done) {
-			client.emit('createInstances', 1, (err) => {
-				if (err) return done(error);
+// 	describe('#createInstances(instances, callback)', function () {
+// 		this.timeout(Infinity);
+// 		it('should create 1 instance', function (done) {
+// 			client.emit('createInstances', 1, (err) => {
+// 				if (err) return done(error);
 
-				done(((controlServer.torPool.instances.length !== 1) && new Error(`It doesn't have 1 instance`)));
-			});
-		})
-	})
+// 				done(((controlServer.torPool.instances.length !== 1) && new Error(`It doesn't have 1 instance`)));
+// 			});
+// 		})
+// 	})
 
-	describe('#newIps()', function (done) {
-		var oldip;
-		this.timeout(Infinity);
-		it('should grab the current ip', (done) => {
-			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
-				oldip = ip;
-				done(error);
-			});
-		});
+// 	describe('#newIps()', function (done) {
+// 		var oldip;
+// 		this.timeout(Infinity);
+// 		it('should grab the current ip', (done) => {
+// 			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
+// 				oldip = ip;
+// 				done(error);
+// 			});
+// 		});
 		
-		it('should change the ip', (done) => {
-			client.emit('newIps');
-			setTimeout(() => {
-				done();
-			}, 1000);
-		});
+// 		it('should change the ip', (done) => {
+// 			client.emit('newIps');
+// 			setTimeout(() => {
+// 				done();
+// 			}, 1000);
+// 		});
 
-		it('should have a diffrent ip', (done) => {
-			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
-				done(((oldip === ip) && new Error("ip hasn't changed")));
-			});			
-		});
-	});
+// 		it('should have a diffrent ip', (done) => {
+// 			get_ip.call({ socks_port: ports.socksPort })((error, ip) => {
+// 				done(((oldip === ip) && new Error("ip hasn't changed")));
+// 			});			
+// 		});
+// 	});
 
-	after(() => {
-		controlServer.torPool.exit();
-		client.close();
-		controlServer.close();
-	});
-});
+// 	after(() => {
+// 		controlServer.torPool.exit();
+// 		client.close();
+// 		controlServer.close();
+// 	});
+// });
 
 
 describe('TorProcess', function () {

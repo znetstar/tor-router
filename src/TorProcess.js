@@ -18,9 +18,7 @@ class TorProcess extends EventEmitter {
 		this.tor_config = _.extend({ 
 			Log: 'notice stdout',
 			DataDirectory: temp.mkdirSync(),
-			ExcludeSingleHopRelays: '0',
-			NewCircuitPeriod: '10',
-			EnforceDistinctSubnets: '0' 
+			NewCircuitPeriod: '10'
 		}, (config || { }));
 	}
 

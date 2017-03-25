@@ -5,7 +5,7 @@ pipelines:
     - step:
         script:
           - apt update && apt install -y curl tor git
-          - curl -sL https://deb.nodesource.com/setup_7.x > /tmp/node_install
+          - curl -sL https://deb.nodesource.com/setup_6.x > /tmp/node_install
           - bash /tmp/node_install && apt install -y nodejs
           - npm install
           - bash /app/bin/get-timezone.sh > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata
