@@ -11,7 +11,7 @@ Installation requirements are node.js and tor. Make sure "tor" is in your PATH.
 To install run: `npm install`
 To start run: `bin/tor-router`
 
-Alternatively if you have docker installed both a Dockerfile has been included. The build will retrieve the latest version of Tor from the offical Tor Project repository.
+Alternatively docker can be used. The build will retrieve the latest version of Tor from the offical Tor Project repository.
 
 To build run: `docker build -t znetstar/tor-router .`
 To start run: `docker run --rm -it -p 9050:9050 znetstar/tor-router tor-router --help` 
@@ -36,6 +36,7 @@ For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instance
 A socket.io server included will listen on port 9077 by default. Using the socket.io server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running.
 
 Example (in node):
+
 `
 	var client = require('socket.io-client').connect('ws://localhost:9077');
 	client.emit('createInstances', 3, (error) => {
