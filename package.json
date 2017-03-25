@@ -5,6 +5,7 @@
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
   "license": "MIT",
+  "description": "A SOCKS proxy for distributing traffic across multiple instances of Tor",
   "bin": {
     "tor-router": "bin/tor-router"
   },
