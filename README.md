@@ -11,6 +11,8 @@ Installation requirements are node.js and tor. Make sure "tor" is in your PATH.
 To install run: `npm install`
 To start run: `bin/tor-router`
 
+To install globally run: `npm install -g`
+
 Alternatively docker can be used. The build will retrieve the latest version of Tor from the offical Tor Project repository.
 
 To build run: `docker build -t znetstar/tor-router .`
