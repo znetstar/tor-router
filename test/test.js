@@ -184,8 +184,8 @@ describe('TorProcess', function () {
 describe('TorPool', function () {
 	var TorPool = TorRouter.TorPool;
 	var pool = new TorPool('tor');
+	this.timeout(Infinity);
 	describe('#create', function () {
-		this.timeout(Infinity);
 		it('should create two instances without any problems', function (done) {
 			pool.create(2, function (error) {
 				if (error) return done(error);
@@ -193,9 +193,19 @@ describe('TorPool', function () {
 			});
 		});
 
-		after(function () {
-			pool.exit();
+	});
+
+	describe('#remove', function () {
+		it('should remove 2 instances from the pool', function (done) {
+			pool.remove(2, function (error) {
+				if (error) return done(error);
+				done((pool.instances.length) && new Error('pool has two instances'));
+			})
 		});
+	})
+
+	after(function () {
+		pool.exit();
 	});
 })
 

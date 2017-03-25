@@ -25,6 +25,7 @@ class ControlServer {
 		socket.on('createInstances', (instances, callback) => { this.torPool.create(instances, (error, instances) => {
 			callback(error)
 		}); });
+		socket.on('removeInstances', (instances, callback) => { this.torPool.remove(instances, callback); });
 		socket.on('newIps', () => { this.torPool.new_ips(); });
 		socket.on('nextInstance', () => { this.torPool.next(); });
 		socket.on('closeInstances', () => { this.torPool.exit(); });

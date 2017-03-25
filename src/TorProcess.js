@@ -22,8 +22,12 @@ class TorProcess extends EventEmitter {
 		}, (config || { }));
 	}
 
-	exit() {
+	exit(callback) {
+		this.process.once('exit', (code) => {
+			callback && callback(null, code);
+		});
 		this.process.kill('SIGKILL');
+
 	}
 
 	new_ip() {

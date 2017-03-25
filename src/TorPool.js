@@ -60,6 +60,13 @@ class TorPool extends EventEmitter {
 		}, (callback || (() => {})));
 	}
 
+	remove(instances, callback) {
+		let instances_to_remove = this._instances.splice(0, instances);
+		async.each(instances_to_remove, (instance, next) => {
+			instance.exit(next);
+		}, callback);
+	}
+
 	next() {
 		this._instances = this._instances.rotate(1);
 		return this.instances[0];
