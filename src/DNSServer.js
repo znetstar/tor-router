@@ -42,7 +42,7 @@ class DNSServer extends UDPServer {
 				connect(this.tor_pool.next());
 			}
 			else {
-				this.log.debug(`[dns]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				this.logger.debug(`[dns]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				this.tor_pool.once('instance_created', connect);
 			}
 		});
