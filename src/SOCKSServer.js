@@ -12,31 +12,31 @@ class SOCKSServer extends SOCKS5Server{
 			var outbound_socket;
 			let buffer = [];
 
+			let onInboundData = (data) => buffer.push(data)
+			
+			let onClose = (error) => {
+				inbound_socket && inbound_socket.end();
+				outbound_socket && outbound_socket.end();
+
+				inbound_socket = outbound_socket = buffer = void(0);
+
+				if (error)
+					this.logger.error(`[socks]: an error occured: ${error.message}`)
+
+				d.exit();
+			};
+
+			if (!inbound_socket) return;
+
+			inbound_socket.on('close', onClose);
+			inbound_socket.on('data', onInboundData);	
+			inbound_socket.on('error', onClose);
+
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
 				logger && logger.info(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port} → ${info.dstAddr}:${info.dstPort}`)
 
-				let onClose = (error) => {
-					inbound_socket && inbound_socket.end();
-					outbound_socket && outbound_socket.end();
-
-					inbound_socket = outbound_socket = buffer = void(0);
-
-					if (error)
-						this.logger.error(`[socks]: an error occured: ${error.message}`)
-
-					d.exit();
-				};
-
 				d.on('error', onClose);
-
-				let onInboundData = (data) => buffer.push(data)
-				
-				if (!inbound_socket) return;
-
-				inbound_socket.on('close', onClose);
-				inbound_socket.on('data', onInboundData);	
-				inbound_socket.on('error', onClose);
 
 				d.run(() => {
 					socks.connect({
