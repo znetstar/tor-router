@@ -1,10 +1,10 @@
 {
   "name": "tor-router",
-  "version": "3.0.2",
+  "version": "3.0.3",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "description": "A SOCKS proxy for distributing traffic across multiple instances of Tor",
   "bin": {
     "tor-router": "bin/tor-router"
