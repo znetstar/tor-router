@@ -31,6 +31,7 @@ class TorProcess extends EventEmitter {
 	}
 
 	new_ip() {
+		this.log.info(`[tor-${this.process.pid}]: has requested a new identity`);
 		this.process.kill('SIGHUP');
 	}
 
@@ -82,6 +83,7 @@ class TorProcess extends EventEmitter {
 			});
 
 			this.once('ready', () => {
+				this.ready = true;
 				this.logger && this.logger.info(`[tor-${tor.pid}]: tor is ready`);
 			});
 

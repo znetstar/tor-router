@@ -9,33 +9,42 @@ class DNSServer extends UDPServer {
 
 		this.on('request', (req, res) => {
 			for (let question of req.question) {
-				let dns_port = (tor_pool.next().dns_port);
-				
-				let outbound_req = dns.Request({
-					question,
-					server: { address: '127.0.0.1', port: dns_port, type: 'udp' },
-					timeout: this.timeout
-				});
+				let connect = (tor_instance) => {
+					let dns_port = (tor_instance.dns_port);
+					let outbound_req = dns.Request({
+						question,
+						server: { address: '127.0.0.1', port: dns_port, type: 'udp' },
+						timeout: this.timeout
+					});
 
-				outbound_req.on('message', (err, answer) => {
-					if (!err && answer) {
-						for (let a of answer.answer){
-							res.answer.push(a);
-							this.logger && this.logger.info(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port} → ${a.address}`)
+					outbound_req.on('message', (err, answer) => {
+						if (!err && answer) {
+							for (let a of answer.answer){
+								res.answer.push(a);
+								this.logger && this.logger.info(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port} → ${a.address}`)
+							}
 						}
-					}
-				});	
+					});	
 
-				outbound_req.on('error', (err) => {
+					outbound_req.on('error', (err) => {
 
-				});
+					});
 
 
-				outbound_req.on('end', () => {
-					res.send();
-				});	
+					outbound_req.on('end', () => {
+						res.send();
+					});	
 
-				outbound_req.send();
+					outbound_req.send();
+				};
+
+				if (this.tor_pool.instances.length) {
+					connect(this.tor_pool.next());
+				}
+				else {
+					this.log.debug(`[dns]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+					this.tor_pool.once('instance_created', connect);
+				}
 			}
 		});
 	}
