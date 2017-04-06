@@ -14,8 +14,6 @@ ENV CONTROL_PORT 9077
 
 ENV PATH $PATH:/app/bin
 
-ADD http://public.zacharyboyd.nyc/columbia-ubuntu-sources.list /etc/apt/sources.list
-
 ADD tor-sources.list /etc/apt/sources.list.d/tor.list
 
 ADD https://deb.nodesource.com/setup_6.x /tmp/nodejs_install
