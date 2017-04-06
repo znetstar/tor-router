@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
@@ -10,7 +10,7 @@
     "tor-router": "bin/tor-router"
   },
   "scripts": {
-    "start": "bin/tor-router -l debug -s -d -j 3",
+    "start": "bin/tor-router -l debug -s -d -j 1",
     "test": "mocha test/test.js"
   },
   "devDependencies": {
