@@ -58,8 +58,7 @@ class TorProcess extends EventEmitter {
 				temp.open('tor-router', (err, info) => {
 					if (err) return callback(err);
 
-					fs.write(info.fd, text);
-					fs.close(info.fd, (err) => {
+					fs.writeFile(info.path, text, (err) => {
 						callback(err, info.path);
 					});
 				});
