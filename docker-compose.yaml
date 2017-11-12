@@ -1,7 +1,6 @@
 version: '2'
 services:
   tor_router:
-    env_file: .env
     build: .
     ports:
     - "9050:9050"
