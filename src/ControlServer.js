@@ -21,6 +21,12 @@ class ControlServer {
 		socket.on('createTorPool', this.createTorPool.bind(this));
 		socket.on('createSOCKSServer', this.createSOCKSServer.bind(this));
 		socket.on('createDNSServer', this.createDNSServer.bind(this));
+		socket.on('queryInstances', (callback) => { 
+			if (!this.torPool)
+				return callback({ message: 'No pool created' });
+
+			callback(null, this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );
+		});
 
 		socket.on('createInstances', (instances, callback) => { this.torPool.create(instances, (error, instances) => {
 			callback && callback(error)

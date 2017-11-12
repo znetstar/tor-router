@@ -16,7 +16,7 @@
   "devDependencies": {
     "mocha": "^3.2.0",
     "request": "^2.79.0",
-    "socket.io-client": "^1.7.3",
+    "socket.io-client": "^1.7.4",
     "socks5-http-client": "^1.0.2"
   },
   "dependencies": {
