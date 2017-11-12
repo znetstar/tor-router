@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "3.0.6",
+  "version": "3.0.7",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
