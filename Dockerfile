@@ -36,4 +36,4 @@ ADD . /app
 
 # Grab the current local timezone from an external api and save it into /etc/timezone, otherwise Tor will complain and won't start
 
-CMD bash /app/bin/get-timezone.sh > /etc/timezone && dpkg-reconfigure -f noninteractive tzdata && npm start
+CMD npm start
