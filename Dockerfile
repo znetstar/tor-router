@@ -36,4 +36,6 @@ ADD . /app
 
 # Grab the current local timezone from an external api and save it into /etc/timezone, otherwise Tor will complain and won't start
 
-CMD npm start
+ENTRYPOINT [ "tor-router" ]
+
+CMD [ "-s", "-d", "-j", "1" ]
