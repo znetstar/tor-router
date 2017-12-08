@@ -16,6 +16,7 @@ program
   .option('-j, --instances <1>', 'Number of tor instances', Number)
   .option('-s, --socksPort [9050]', 'SOCKS Server port', Number)
   .option('-d, --dnsPort [9053]', 'DNS Server port', Number)
+  .option('-h, --httpPort [9080]', 'HTTP Server port', Number)
   .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging', Number)
   .parse(process.argv);
 
@@ -29,6 +30,7 @@ let instances = program.instances || Number(process.env.INSTANCES);
 let log_level = program.logLevel || process.env.LOG_LEVEL;
 let socks_port = (program.socksPort === true ? 9050 : program.socksPort) || Number(process.env.SOCKS_PORT);
 let dns_port = (program.dnsPort === true ? 9053 : program.dnsPort) || Number(process.env.DNS_PORT);
+let http_port = (program.httpPort === true ? 9080 : program.httpPort) || Number(process.env.HTTP_PORT);
 let control_port = (program.controlPort === true ? 9077 : program.controlPort) || Number(process.env.CONTROL_PORT) || 9077;
 
 if (log_level === 'null') 
@@ -42,6 +44,10 @@ process.on('SIGHUP', () => {
 
 if (socks_port) {
 	let socks = control.createSOCKSServer(socks_port);
+}
+
+if (http_port) {
+	let http = control.createHTTPServer(http_port);
 }
 
 if (dns_port) {

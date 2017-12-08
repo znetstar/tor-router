@@ -26,15 +26,13 @@ ADD tor-sources.list /etc/apt/sources.list.d/tor.list
 
 RUN bash /tmp/nodejs_install
 
-RUN apt install -y --allow-unauthenticated deb.torproject.org-keyring nodejs tor git tzdata
+RUN apt install -y nodejs tor git
 
 ADD package.json /app/package.json
 
 RUN npm install
 
 ADD . /app
-
-# Grab the current local timezone from an external api and save it into /etc/timezone, otherwise Tor will complain and won't start
 
 ENTRYPOINT [ "tor-router" ]
 

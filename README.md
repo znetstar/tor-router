@@ -16,7 +16,7 @@ To install globally run: `npm install -g`
 Alternatively docker can be used. The build will retrieve the latest version of Tor from the offical Tor Project repository.
 
 To build run: `docker build -t znetstar/tor-router .`
-To start run: `docker run --rm -it -p 9050:9050 znetstar/tor-router tor-router --help` 
+To start run: `docker run --rm -it -p 9050:9050 znetstar/tor-router`
 
 ## Usage
 

@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "3.0.7",
+  "version": "3.1.0",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
@@ -27,6 +27,7 @@
     "lodash": "^4.17.4",
     "native-dns": "git+https://github.com/znetstar/node-dns.git",
     "socket.io": "^1.7.3",
+    "socks-proxy-agent": "^3.0.1",
     "socksv5": "git+https://github.com/lee-elenbaas/socksv5.git",
     "temp": "^0.8.3",
     "winston": "^2.3.1"

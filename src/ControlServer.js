@@ -2,6 +2,7 @@ const HTTPServer = require('http').Server;
 const TorPool = require('./TorPool');
 const SOCKSServer = require('./SOCKSServer');
 const DNSServer = require('./DNSServer');
+const HTTPProxyServer = require('./HTTPServer');
 
 class ControlServer {
 	constructor(logger) {
@@ -21,6 +22,7 @@ class ControlServer {
 		socket.on('createTorPool', this.createTorPool.bind(this));
 		socket.on('createSOCKSServer', this.createSOCKSServer.bind(this));
 		socket.on('createDNSServer', this.createDNSServer.bind(this));
+		socket.on('createHTTPServer', this.createHTTPServer.bind(this));
 		socket.on('queryInstances', (callback) => { 
 			if (!this.torPool)
 				return callback({ message: 'No pool created' });
@@ -49,6 +51,13 @@ class ControlServer {
 		this.socksServer.listen(port || 9050);
 		this.logger && this.logger.info(`[socks]: Listening on ${port}`);
 		return this.socksServer;
+	}
+
+	createHTTPServer(port) {
+		this.httpServer = new HTTPProxyServer(this.torPool, this.logger);
+		this.httpServer.listen(port || 9080);
+		this.logger && this.logger.info(`[http]: Listening on ${port}`);
+		return this.httpServer;
 	}
 
 	createDNSServer(port) {
