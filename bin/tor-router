@@ -61,6 +61,6 @@ if (instances) {
 	});
 }
 
-control.server.listen(control_port, () => {
+control.listen(control_port, () => {
 	logger && logger.info(`[control]: Control Server listening on ${control_port}`);
 })

@@ -1,70 +1,102 @@
-const HTTPServer = require('http').Server;
 const TorPool = require('./TorPool');
 const SOCKSServer = require('./SOCKSServer');
 const DNSServer = require('./DNSServer');
-const HTTPProxyServer = require('./HTTPServer');
+const HTTPServer = require('./HTTPServer');
+const rpc = require('jrpc2');
 
 class ControlServer {
 	constructor(logger) {
-		this.server = new HTTPServer();
-		this.io = require('socket.io')(this.server);
-
-		this.torPool = new TorPool(null, null, logger);
+		var torPool = this.torPool = new TorPool(null, null, logger);
 		this.logger = logger;
 
-		this.io.use(this.handleConnection.bind(this));
-	}
+		let server = this.server = new rpc.Server();
+		server.expose('createTorPool', this.createTorPool.bind(this));
+		server.expose('createSOCKSServer', this.createSOCKSServer.bind(this));
+		server.expose('createDNSServer', this.createDNSServer.bind(this));
+		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
 
-	listen() { this.server.listen.apply(this.server, arguments); }
-	close() { this.server.close.apply(this.server, arguments); }
+		server.expose('queryInstances', function () {
+			return new Promise((resolve, reject) => {
+				if (!torPool)
+					return reject({ message: 'No pool created' });
 
-	handleConnection(socket, next) {
-		socket.on('createTorPool', this.createTorPool.bind(this));
-		socket.on('createSOCKSServer', this.createSOCKSServer.bind(this));
-		socket.on('createDNSServer', this.createDNSServer.bind(this));
-		socket.on('createHTTPServer', this.createHTTPServer.bind(this));
-		socket.on('queryInstances', (callback) => { 
-			if (!this.torPool)
-				return callback({ message: 'No pool created' });
-
-			callback(null, this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );
+				resolve(torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );		
+			});
 		});
 
-		socket.on('createInstances', (instances, callback) => { this.torPool.create(instances, (error, instances) => {
-			callback && callback(error)
-		}); });
-		socket.on('removeInstances', (instances, callback) => { this.torPool.remove(instances, callback); });
-		socket.on('newIps', () => { this.torPool.new_ips(); });
-		socket.on('nextInstance', () => { this.torPool.next(); });
-		socket.on('closeInstances', () => { this.torPool.exit(); });
+		server.expose('createInstances', function (instances) {
+			return new Promise((resolve, reject) => {
+				torPool.create(instances, (error, instances) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		});
 
-		next();
+		server.expose('removeInstances', function (instances) {
+			return new Promise((resolve, reject) => {
+				torPool.remove(instances, (error) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		});
+
+		server.expose('newIps', function () {
+			torPool.new_ips();
+			return Promise.resolve();
+		});
+
+		server.expose('nextInstance', function () {
+			torPool.next();
+			return Promise.resolve();
+		});
+
+		server.expose('closeInstances', function ()  {
+			torPool.exit();
+			return Promise.resolve();
+		});
+
+	}
+
+	listen(port, callback) {  
+		this.tcpTransport = new rpc.tcpTransport({ port });
+		this.tcpTransport.listen(this.server);
+		callback();
+	}
+
+	close() { 
+		return this.tcpTransport.tcpServer.close();
 	}
 
 	createTorPool(options) {
 		this.torPool = new TorPool(null, options, this.logger);
-		return this.torPool;
+		this.torPool;
+		return Promise.resolve();
 	}
 
 	createSOCKSServer(port) {
 		this.socksServer = new SOCKSServer(this.torPool, this.logger);
 		this.socksServer.listen(port || 9050);
 		this.logger && this.logger.info(`[socks]: Listening on ${port}`);
-		return this.socksServer;
+		this.socksServer;
+		return Promise.resolve();
 	}
 
 	createHTTPServer(port) {
 		this.httpServer = new HTTPProxyServer(this.torPool, this.logger);
 		this.httpServer.listen(port || 9080);
 		this.logger && this.logger.info(`[http]: Listening on ${port}`);
-		return this.httpServer;
+		this.httpServer;
+		return Promise.resolve();
 	}
 
 	createDNSServer(port) {
 		this.dnsServer = new DNSServer(this.torPool, this.logger);
 		this.dnsServer.serve(port || 9053);
 		this.logger && this.logger.info(`[dns]: Listening on ${port}`);
-		return this.dnsServer;
+		this.dnsServer;
+		return Promise.resolve();
 	}
 };
 

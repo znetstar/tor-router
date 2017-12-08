@@ -36,18 +36,31 @@ For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instance
 
 ## Control Server
 
-A socket.io server included will listen on port 9077 by default. Using the socket.io server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running.
+A JSON-RPC 2 TCP Server will listen on port 9077 by default. Using the rpc server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running.
 
 Example (in node):
 
 ```
-	var client = require('socket.io-client').connect('ws://localhost:9077');
-	client.emit('createInstances', 3, (error) => {
-		if (error) return;
-		console.log('three instances created!');
-		client.emit('newIps');
-		console.log('clients have new ips!')
+	var net = require('net');
+
+	const client = net.createConnection({ port: 9077 }, () => {
+		var rpcRequest = {
+			"method": "createInstances",
+			"params": [3], 
+			"jsonrpc":"2.0", 
+			"id": 1
+		};
+		client.write(JSON.stringify(rpcRequest));
 	});
+
+	client.on('data', (chunk) => {
+		var rawResponse = chunk.toString('utf8');
+		var rpcResponse = JSON.parse(rawResponse);
+		console.log(rpcResponse)
+		if (rpcResponse.id === 1) {
+			console.log('Three instances have been created!')
+		}
+	})
 ```
 
 ## Test
