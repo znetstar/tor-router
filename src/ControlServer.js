@@ -84,7 +84,7 @@ class ControlServer {
 	}
 
 	createHTTPServer(port) {
-		this.httpServer = new HTTPProxyServer(this.torPool, this.logger);
+		this.httpServer = new HTTPServer(this.torPool, this.logger);
 		this.httpServer.listen(port || 9080);
 		this.logger && this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
