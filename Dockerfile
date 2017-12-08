@@ -8,12 +8,6 @@ EXPOSE 53
 
 EXPOSE 9077
 
-ENV DNS_PORT 53
-
-ENV SOCKS_PORT 9050
-
-ENV CONTROL_PORT 9077
-
 ENV PATH $PATH:/app/bin
 
 ADD https://deb.nodesource.com/setup_8.x /tmp/nodejs_install
