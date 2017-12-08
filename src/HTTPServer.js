@@ -9,7 +9,10 @@ class HTTPServer extends Server {
 	constructor(tor_pool, logger) {
 		let handle_http_connections = (req, res) => {
 			let d = domain.create();
-
+			d.on('error', (error) => {
+				this.logger.error(`[http-proxy]: an error occured: ${error.message}`)
+				res.end();
+			});
 			d.add(req);
 			d.add(res);
 
@@ -32,7 +35,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[http]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
+				logger && logger.info(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
 
 				d.run(() => {
 					let proxy_req = http.request({
@@ -78,32 +81,23 @@ class HTTPServer extends Server {
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
-				logger.debug(`[http]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				logger.debug(`[http-proxy]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				tor_pool.once('instance_created', connect);
 			}
 		};
 
-		let handle_tcp_connections = (req, inbound_socket, head) => {
+		let handle_connect_connections = (req, inbound_socket, head) => {
 			let d = domain.create();
 
-			d.add(socket);
+			d.add(inbound_socket);
 
-			let url = URL.parse(req.url);
-			let hostname = url.host.split(':').shift();
-			let port = url.host.split(':').pop();
+			let hostname = req.url.split(':').shift();
+			let port = Number(req.url.split(':').pop());
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[http]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${hostname}:${port}`)
-
-				d.on('error', onClose);
-
-				d.add(inbound_socket);
-
-				var buffer = [];
-				let onInboundData = function (data) {
-					buffer.push(data);
-				};
+				logger && logger.info(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${hostname}:${port}`)
+				var outbound_socket;
 
 				let onClose = (error) => {
 					inbound_socket && inbound_socket.end();
@@ -112,9 +106,18 @@ class HTTPServer extends Server {
 					inbound_socket = outbound_socket = buffer = void(0);
 
 					if (error)
-						this.logger.error(`[http]: an error occured: ${error.message}`)
+						this.logger.error(`[http-connect]: an error occured: ${error.message}`)
 
 					d.exit();
+				};
+
+				d.on('error', onClose);
+
+				d.add(inbound_socket);
+
+				var buffer = [head];
+				let onInboundData = function (data) {
+					buffer.push(data);
 				};
 
 				d.run(() => {
@@ -129,34 +132,26 @@ class HTTPServer extends Server {
 						outbound_socket = $outbound_socket;
 						d.add(outbound_socket);
 						outbound_socket && outbound_socket.on('close', onClose);
-
-						inbound_socket && inbound_socket.removeListener('data', onInboundData);
-						inbound_socket &&  inbound_socket.on('data', (data) => {
-							outbound_socket && outbound_socket.write(data);
-						});
-
-						outbound_socket && outbound_socket.on('data', (data) => {
-							inbound_socket && inbound_socket.write(data);
-						});
-
 						outbound_socket && outbound_socket.on('error', onClose);
 
-						while (buffer && buffer.length && outbound_socket) {
-							outbound_socket.write(buffer.shift());
-						}
+						inbound_socket.write('HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: tor-router\r\n' +'\r\n');
+						outbound_socket.write(head);
+
+						outbound_socket.pipe(inbound_socket);
+						inbound_socket.pipe(outbound_socket);
 					})
 				});
 			};
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
-				logger.debug(`[http]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				logger.debug(`[http-connect]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				tor_pool.once('instance_created', connect);
 			}
 		};
 
 		super(handle_http_connections);
-		this.on('connect', handle_tcp_connections);
+		this.on('connect', handle_connect_connections);
 
 		this.logger = logger;
 		this.tor_pool = tor_pool;

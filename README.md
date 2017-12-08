@@ -2,7 +2,7 @@
 
 *Tor Router* is a simple SOCKS5 forward proxy for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor an each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circut and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
 
-Tor Router also includes a DNS forward proxy as well, which like the SOCKS proxy will distribute traffic across multiple instances of Tor in round-robin fashion.
+Tor Router also includes a DNS forward proxy and a HTTP forward proxy as well, which like the SOCKS proxy will distribute traffic across multiple instances of Tor in round-robin fashion.
 
 ## Building and Running
 
@@ -28,6 +28,7 @@ The following command line switches and their environment variable equivalents a
 |-j, --instances    |INSTANCES           |Number of Tor instances to spawn|
 |-s, --socksPort    |SOCKS_PORT			 |Port the SOCKS proxy will bind to|
 |-d, --dnsPort		|DNS_PORT			 |Port the DNS proxy will bind to|
+|-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
 |-l, --logLevel		|LOG_LEVEL			 |The log level, "info" by default. Set to "null" to disable logging|
 
 
