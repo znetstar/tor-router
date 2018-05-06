@@ -76,7 +76,7 @@ class TorProcess extends EventEmitter {
 			});
 
 			tor.stderr.on('data', (data) => {
-				let error_message = new Buffer(data).toString('utf8');
+				let error_message = Buffer.from(data).toString('utf8');
 
 				this.emit('error', new Error(error_message));
 			});
@@ -87,7 +87,7 @@ class TorProcess extends EventEmitter {
 			});
 
 			tor.stdout.on('data', (data) => {
-				let text = new Buffer(data).toString('utf8');
+				let text = Buffer.from(data).toString('utf8');
 				let msg = text.split('] ').pop();
 				if (text.indexOf('Bootstrapped 100%: Done') !== -1){
 					this.emit('ready');
