@@ -29,7 +29,7 @@ The following command line switches and their environment variable equivalents a
 |-s, --socksPort    |SOCKS_PORT			 |Port the SOCKS proxy will bind to|
 |-d, --dnsPort		|DNS_PORT			 |Port the DNS proxy will bind to|
 |-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
-|-l, --logLevel		|LOG_LEVEL			 |The log level, "info" by default. Set to "null" to disable logging|
+|-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
 
 
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
