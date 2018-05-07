@@ -6,7 +6,7 @@ const rpc = require('jrpc2');
 
 class ControlServer {
 	constructor(logger) {
-		var torPool = this.torPool = new TorPool(null, null, logger);
+		this.torPool = this.torPool = new TorPool(null, null, logger);
 		this.logger = logger;
 
 		let server = this.server = new rpc.Server();
@@ -15,47 +15,47 @@ class ControlServer {
 		server.expose('createDNSServer', this.createDNSServer.bind(this));
 		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
 
-		server.expose('queryInstances', function () {
+		server.expose('queryInstances', (function () {
 			return new Promise((resolve, reject) => {
-				if (!torPool)
+				if (!this.torPool)
 					return reject({ message: 'No pool created' });
 
-				resolve(torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );		
+				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );		
 			});
-		});
+		}).bind(this));
 
-		server.expose('createInstances', function (instances) {
+		server.expose('createInstances', (function (instances) {
 			return new Promise((resolve, reject) => {
-				torPool.create(instances, (error, instances) => {
+				this.torPool.create(instances, (error, instances) => {
 					if (error) reject(error);
 					else resolve();
 				}); 
 			});
-		});
+		}).bind(this) );
 
-		server.expose('removeInstances', function (instances) {
+		server.expose('removeInstances', (function (instances) {
 			return new Promise((resolve, reject) => {
-				torPool.remove(instances, (error) => {
+				this.torPool.remove(instances, (error) => {
 					if (error) reject(error);
 					else resolve();
 				}); 
 			});
-		});
+		}).bind(this) );
 
-		server.expose('newIps', function () {
-			torPool.new_ips();
+		server.expose('newIps', (function() {
+			this.torPool.new_ips();
 			return Promise.resolve();
-		});
+		}).bind(this) );
 
-		server.expose('nextInstance', function () {
-			torPool.next();
+		server.expose('nextInstance', (function () {
+			this.torPool.next();
 			return Promise.resolve();
-		});
+		}).bind(this) );
 
-		server.expose('closeInstances', function ()  {
-			torPool.exit();
+		server.expose('closeInstances', (function ()  {
+			this.torPool.exit();
 			return Promise.resolve();
-		});
+		}).bind(this) );
 
 	}
 

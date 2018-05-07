@@ -37,7 +37,9 @@ class TorPool extends EventEmitter {
 		this.logger = logger;
 	}
 
-	get instances() { return this._instances.filter((tor) => tor.ready).slice(0); }
+	get instances() { 
+		return this._instances.filter((tor) => tor.ready).slice(0);
+	}
 
 	create_instance(callback) {
 		let config = _.extend({}, this.tor_config)
