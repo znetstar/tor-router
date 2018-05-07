@@ -20,10 +20,12 @@ program
   .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging', Number)
   .parse(process.argv);
 
-var logger = new (winston.Logger)({
-transports: [
-  new (winston.transports.Console)({ level: (program.logLevel || 'info') })
-]
+var logger = winston.createLogger({
+	level: (program.logLevel || 'info'),
+	format: winston.format.simple(),
+	transports: [
+ 		new (winston.transports.Console)({ level: (program.logLevel || 'info') })
+	]
 });
 
 let instances = program.instances || Number(process.env.INSTANCES);
