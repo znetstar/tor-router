@@ -35,7 +35,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
+				logger && logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
 
 				d.run(() => {
 					let proxy_req = http.request({
@@ -96,7 +96,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${hostname}:${port}`)
+				logger && logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${hostname}:${port}`)
 				var outbound_socket;
 
 				let onClose = (error) => {

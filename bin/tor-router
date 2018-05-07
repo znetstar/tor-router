@@ -17,14 +17,16 @@ program
   .option('-s, --socksPort [9050]', 'SOCKS Server port', Number)
   .option('-d, --dnsPort [9053]', 'DNS Server port', Number)
   .option('-h, --httpPort [9080]', 'HTTP Server port', Number)
-  .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging', Number)
+  .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"')
   .parse(process.argv);
 
+let logLevel = (program.logLevel || 'info');
+
 var logger = winston.createLogger({
-	level: (program.logLevel || 'info'),
+	level: logLevel,
 	format: winston.format.simple(),
 	transports: [
- 		new (winston.transports.Console)({ level: (program.logLevel || 'info') })
+ 		new (winston.transports.Console)({ level: logLevel })
 	]
 });
 

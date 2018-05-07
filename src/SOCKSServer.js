@@ -34,7 +34,7 @@ class SOCKSServer extends SOCKS5Server{
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.info(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port} → ${info.dstAddr}:${info.dstPort}`)
+				logger && logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port} → ${info.dstAddr}:${info.dstPort}`)
 
 				d.on('error', onClose);
 

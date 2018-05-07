@@ -21,7 +21,7 @@ class DNSServer extends UDPServer {
 						if (!err && answer) {
 							for (let a of answer.answer){
 								res.answer.push(a);
-								this.logger && this.logger.info(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port} → ${a.address}`)
+								this.logger && this.logger.verbose(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port} → ${a.address}`)
 							}
 						}
 					});	
