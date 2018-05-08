@@ -28,6 +28,12 @@ RUN npm install
 
 ADD . /app
 
+RUN useradd -ms /bin/bash tor
+
+USER tor_router
+
+ENV HOME /home/tor_router
+
 ENTRYPOINT [ "tor-router" ]
 
 CMD [ "-s", "-d", "-j", "1" ]
