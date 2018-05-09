@@ -16,7 +16,10 @@ RUN apt-get update && apt-get -y install dirmngr
 
 RUN gpg --keyserver keys.gnupg.net --recv A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 && gpg --export A3C4F0F979CAA22CDBA8F512EE8CBC9E886DDD89 | apt-key add -
 
-ADD tor-sources.list /etc/apt/sources.list.d/tor.list
+RUN echo 'deb http://deb.torproject.org/torproject.org artful main\n\
+\n\
+deb-src http://deb.torproject.org/torproject.org artful main'\
+>> /etc/apt/sources.list.d/tor.list
 
 RUN bash /tmp/nodejs_install
 
