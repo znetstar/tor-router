@@ -6,7 +6,7 @@ const rpc = require('jrpc2');
 
 class ControlServer {
 	constructor(logger) {
-		this.torPool = this.torPool = new TorPool(null, null, logger);
+		this.torPool = new TorPool(null, null, logger);
 		this.logger = logger;
 
 		let server = this.server = new rpc.Server();
