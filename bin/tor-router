@@ -1,44 +1,114 @@
 #!/usr/bin/env node
 
-var program = require('commander');
+var nconf = require('nconf');
+var yargs = require('yargs');
+var fs = require('fs');
 var TorRouter = require('../');
 var SOCKSServer = TorRouter.SOCKSServer;
 var DNSServer = TorRouter.DNSServer;
 var TorPool = TorRouter.TorPool;
 var ControlServer = TorRouter.ControlServer;
-var winston = require('winston')
+var winston = require('winston');
 
 process.title = 'tor-router';
 
-program
-  .version(JSON.parse(require('fs').readFileSync(`${__dirname}/../package.json`, 'utf8')).version)
-  .option('-c, --controlPort [9077]', 'Control Server port', Number)
-  .option('-j, --instances <1>', 'Number of tor instances', Number)
-  .option('-s, --socksPort [9050]', 'SOCKS Server port', Number)
-  .option('-d, --dnsPort [9053]', 'DNS Server port', Number)
-  .option('-h, --httpPort [9080]', 'HTTP Server port', Number)
-  .option('-l, --logLevel [info]', 'Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"')
-  .parse(process.argv);
+let package_json = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, 'utf8'));
 
-let logLevel = (program.logLevel || 'info');
+let argv_config = require('yargs')
+	.version(package_json.version)
+	.usage('Usage: tor-router [arguments]')
+	.options({
+		f: {
+			alias: 'config',
+			describe: 'Path to a config file to use',
+			demand: false
+		},
+		c: {
+			alias: 'controlPort',
+			describe: 'Port the control server will bind to [default: 9077]',
+			demand: false
+			// ,default: 9077
+		},
+		j: {
+			alias: 'instances',
+			describe: 'Number of instances using the default config [default: 1]',
+			demand: false
+			// ,default: 1
+		},
+		s: {
+			alias: 'socksPort',
+			describe: 'Port the SOCKS5 Proxy server will bind to [default: 9050]',
+			demand: false,
+			// ,default: 9050
+		},
+		d: {
+			alias: 'dnsPort',
+			describe: 'Port the DNS Proxy server will bind to',
+			demand: false
+		},
+		h: {
+			alias: 'httpPort',
+			describe: 'Port the HTTP Proxy server will bind to',
+			demand: false
+		},
+		l: {
+			alias: 'logLevel',
+			describe: 'Controls the verbosity of console log output. Default level is "info". Set to "verbose" to see all network traffic logged or "null" to disable logging completely [default: info]',
+			demand: false
+			// ,default: "info"
+		}
+	});
 
-var logger = winston.createLogger({
-	level: logLevel,
-	format: winston.format.simple(),
-	transports: [
- 		new (winston.transports.Console)({ level: logLevel })
-	]
-});
+let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel" ];
 
-let instances = program.instances || Number(process.env.INSTANCES);
-let log_level = program.logLevel || process.env.LOG_LEVEL;
-let socks_port = (program.socksPort === true ? 9050 : program.socksPort) || Number(process.env.SOCKS_PORT);
-let dns_port = (program.dnsPort === true ? 9053 : program.dnsPort) || Number(process.env.DNS_PORT);
-let http_port = (program.httpPort === true ? 9080 : program.httpPort) || Number(process.env.HTTP_PORT);
-let control_port = (program.controlPort === true ? 9077 : program.controlPort) || Number(process.env.CONTROL_PORT) || 9077;
+nconf
+	.env({
+		whitelist: env_whitelist,
+		parseValues: true,
+		transform: (obj) => {
+			if (env_whitelist.includes(obj.key)) {
+				if (obj.key.indexOf('_') !== -1) {
+					let a = obj.key.toLowerCase().split('_');
+					i = 1;
+					while (i < a.length) {
+						a[i] = a[i][0].toUpperCase() + a[i].substr(1);
+						i++;
+					}
+					obj.key = a.join('');
+				}
+			}
+			return obj;
+		}
+	})
+	.argv(argv_config);
 
-if (log_level === 'null') 
-	logger = void(0);
+let nconf_config = nconf.get('config');
+if (nconf_config) {
+	nconf.file(nconf_config);
+}
+
+nconf.defaults(require(`${__dirname}/../src/default_config.js`))
+
+let logLevel = nconf.get('logLevel')
+
+var logger = null;
+if (logLevel !== 'null') {
+	logger = winston.createLogger({
+		level: logLevel,
+		format: winston.format.simple(),
+		transports: [
+	 		new (winston.transports.Console)({ level: logLevel })
+		]
+	});
+}
+
+let instances = nconf.get('instances');
+let log_level = logLevel;
+let socks_port = nconf.get('socksPort');
+let dns_port = nconf.get('dnsPort');
+let http_port = nconf.get('httpPort');
+let control_port = nconf.get('controlPort');
+
 
 let control = new ControlServer(logger);
 
