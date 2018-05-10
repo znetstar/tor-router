@@ -113,6 +113,8 @@ Example (in node):
 	})
 ```
 
+A full list of available RPC Methods can be [found here](https://github.com/znetstar/tor-router/docs/rpc-methods.md)
+
 ## Test
 
 Tests are written in mocha, just run `npm test`
