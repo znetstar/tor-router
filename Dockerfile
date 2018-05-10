@@ -8,7 +8,9 @@ EXPOSE 53
 
 EXPOSE 9077
 
-ENV PATH $PATH:/app/bin
+ENV PARENT_DATA_DIRECTORTY /var/lib/tor-router
+
+ENV PATH $PATH:/app/bin 
 
 ADD https://deb.nodesource.com/setup_8.x /tmp/nodejs_install
 

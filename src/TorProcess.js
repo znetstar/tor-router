@@ -1,33 +1,31 @@
 const spawn = require('child_process').spawn;
 const _ = require('lodash');
-const temp = require('temp');
 const async = require('async');
 const fs = require('fs');
 const getPort = require('get-port');
+const del = require('del');
 const EventEmitter = require('eventemitter2').EventEmitter2;
-
+const temp = require('temp');
 temp.track();
 
 class TorProcess extends EventEmitter {
-	constructor(tor_path, config, logger) {
+	constructor(tor_path, config, logger, nconf) {
 		super();
 
 		this.tor_path = tor_path || 'tor';
+		this.nconf = nconf;
 		this.logger = logger;
 
-		this.tor_config = _.extend({ 
-			Log: 'notice stdout',
-			DataDirectory: temp.mkdirSync(),
-			NewCircuitPeriod: '10'
-		}, (config || { }));
+		config.DataDirectory = config.DataDirectory || temp.mkdirSync();
+
+		this.tor_config = config;
 	}
 
 	exit(callback) {
 		this.process.once('exit', (code) => {
-			callback && callback(null, code);
+			del(this.tor_config.DataDirectory).then(() => callback && callback(null, code)).catch((error) => callback && callback(error, code));
 		});
 		this.process.kill('SIGKILL');
-
 	}
 
 	new_ip() {

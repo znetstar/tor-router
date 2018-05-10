@@ -3,7 +3,7 @@ const SOCKS5Server = socks.Server;
 const domain = require('domain');
 
 class SOCKSServer extends SOCKS5Server{
-	constructor(tor_pool, logger) {
+	constructor(tor_pool, logger, nconf) {
 		let handleConnection = (info, accept, deny) => {
 			let d = domain.create();
 
@@ -79,6 +79,7 @@ class SOCKSServer extends SOCKS5Server{
 		super(handleConnection);
 
 		this.logger = logger;
+		this.nconf = nconf;
 
 		this.useAuth(socks.auth.None());
 	}

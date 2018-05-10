@@ -21,10 +21,12 @@
   },
   "dependencies": {
     "async": "^2.1.4",
+    "del": "^3.0.0",
     "eventemitter2": "^3.0.0",
     "get-port": "^2.1.0",
     "jrpc2": "^1.0.5",
     "lodash": "^4.17.4",
+    "nanoid": "^1.0.2",
     "native-dns": "git+https://github.com/znetstar/node-dns.git",
     "nconf": "^0.10.0",
     "socks-proxy-agent": "^3.0.1",

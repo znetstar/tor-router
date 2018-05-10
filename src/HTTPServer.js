@@ -6,7 +6,7 @@ const URL = require('url');
 const SocksProxyAgent = require('socks-proxy-agent');
 
 class HTTPServer extends Server {
-	constructor(tor_pool, logger) {
+	constructor(tor_pool, logger, nconf) {
 		let handle_http_connections = (req, res) => {
 			let d = domain.create();
 			d.on('error', (error) => {
@@ -154,6 +154,7 @@ class HTTPServer extends Server {
 		this.on('connect', handle_connect_connections);
 
 		this.logger = logger;
+		this.nconf = nconf;
 		this.tor_pool = tor_pool;
 	}
 };

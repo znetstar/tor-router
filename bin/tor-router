@@ -9,6 +9,7 @@ var DNSServer = TorRouter.DNSServer;
 var TorPool = TorRouter.TorPool;
 var ControlServer = TorRouter.ControlServer;
 var winston = require('winston');
+var async = require('async');
 
 process.title = 'tor-router';
 
@@ -56,10 +57,15 @@ let argv_config = require('yargs')
 			describe: 'Controls the verbosity of console log output. Default level is "info". Set to "verbose" to see all network traffic logged or "null" to disable logging completely [default: info]',
 			demand: false
 			// ,default: "info"
+		},
+		p: {
+			alias: 'parentDataDirectory',
+			describe: 'Parent directory that will contain the data directories for the instances',
+			demand: false
 		}
 	});
 
-let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel" ];
+let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", 'PARENT_DATA_DIRECTORIES', "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel", 'parentDataDirectories' ];
 
 nconf
 	.env({
@@ -110,7 +116,7 @@ let http_port = nconf.get('httpPort');
 let control_port = nconf.get('controlPort');
 
 
-let control = new ControlServer(logger);
+let control = new ControlServer(logger, nconf);
 
 process.on('SIGHUP', () => {
 	control.torPool.new_ips();
@@ -129,7 +135,7 @@ if (dns_port) {
 }
 
 if (instances) {
-	logger && logger.info(`[tor]: starting ${instances} tor instances...`)
+	logger && logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instances...`)
 	control.torPool.create(instances, (err) => {
 		logger && logger.info('[tor]: tor started');
 	});
@@ -138,3 +144,14 @@ if (instances) {
 control.listen(control_port, () => {
 	logger && logger.info(`[control]: Control Server listening on ${control_port}`);
 })
+
+function cleanUp(error) {
+	async.each(control.torPool.instances, (instance, next) => {
+		instance.exit(next);
+	}, (exitError) => {
+		process.exit(Number(Boolean(error || exitError)));
+	});
+}
+process.on('exit', cleanUp);
+process.on('SIGINT', cleanUp);
+process.on('uncaughtException', cleanUp);

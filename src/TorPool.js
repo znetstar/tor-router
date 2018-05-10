@@ -20,30 +20,37 @@ Array.prototype.rotate = (function() {
 const EventEmitter = require('eventemitter2').EventEmitter2;
 const async = require('async');
 const TorProcess = require('./TorProcess');
-const temp = require('temp');
 const _ = require('lodash');
-
-temp.track();
+const path = require('path');
+const nanoid = require('nanoid');
+const fs = require('fs');
 
 class TorPool extends EventEmitter {
-	constructor(tor_path, config, logger) {
+	constructor(tor_path, default_config, logger, nconf) {
 		super();
 
-		config = config || {};
-
-		this.tor_config = config;
+		default_config = _.extend({}, (default_config || {}), nconf.get('torConfig'));
+		this.default_tor_config = default_config;
+		this.data_directory = nconf.get('parentDataDirectory');
+		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
 		this.tor_path = tor_path || 'tor';
 		this._instances = [];
 		this.logger = logger;
+		this.nconf = nconf;
 	}
 
 	get instances() { 
 		return this._instances.filter((tor) => tor.ready).slice(0);
 	}
 
-	create_instance(callback) {
-		let config = _.extend({}, this.tor_config)
-		let instance = new TorProcess(this.tor_path, config, this.logger);
+	create_instance(instance_definition, callback) {
+		instance_definition.Config = instance_definition.Config || {};
+		instance_definition.Config = _.extend(instance_definition.Config, this.default_tor_config);
+		let instance_id = nanoid();
+		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, instance_id);
+		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.logger, this.nconf);
+		instance.id = instance_id;
+		instance.definition = instance_definition;
 		instance.create((error) => {
 			if (error) return callback(error);
 			this._instances.push(instance);
@@ -56,11 +63,21 @@ class TorPool extends EventEmitter {
 		});
 	}
 
-	create(instances, callback) {
-		if (!Number(instances)) return callback(null, []);
-		async.map(Array.from(Array(Number(instances))), (nothing, next) => {
-			this.create_instance(next);
+	add(instance_definitions, callback) {
+		async.each(instance_definitions, (instance_definition, next) => {
+			this.create_instance(instance_definition, next);
 		}, (callback || (() => {})));
+	}
+
+	create(instances, callback) {
+		if (typeof(instances) === 'number') {
+			instances = Array.from(Array(instances)).map(() => {
+				return {
+					Config: {}
+				};
+			});
+		}
+		return this.add(instances, callback);
 	}
 
 	remove(instances, callback) {
@@ -70,17 +87,32 @@ class TorPool extends EventEmitter {
 		}, callback);
 	}
 
+	remove_at(instance_index, callback) {
+		let instance = this._instances.slice(instance_index, 1);
+		instance.exit(() => {
+			callback();
+		});
+	}
+
 	next() {
 		this._instances = this._instances.rotate(1);
 		return this.instances[0];
 	}
 
-	exit() {
-		this.instances.forEach((tor) => tor.exit());
+	exit(callback) {
+		async.each(this.instances, (instance,next) => {
+			instance.exit(next);
+		}, (error) => {
+			callback && callback(error);
+		});
 	}
 
 	new_ips() {
 		this.instances.forEach((tor) => tor.new_ip());
+	}
+
+	new_ip_at(index) {
+		this.instances[index].new_ip();
 	}
 };
 

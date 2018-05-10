@@ -24,6 +24,7 @@ The following command line switches and their environment variable equivalents a
 
 |Command line switch|Environment Variable|Description|
 |-------------------|--------------------|-----------|
+|-f, --config       |                    |Path to a JSON configuration file to use|
 |-c, --controlPort	|CONTROL_PORT        |Port the control server will bind to (see below)|
 |-j, --instances    |INSTANCES           |Number of Tor instances to spawn|
 |-s, --socksPort    |SOCKS_PORT			 |Port the SOCKS proxy will bind to|
@@ -31,8 +32,51 @@ The following command line switches and their environment variable equivalents a
 |-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
 |-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
 
-
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
+
+## Configuration
+
+Using the `--config` or `-f` command line switch you can set the path to a JSON file which can be used to load configuration on startup
+
+The same variable names from the command line switches are used to name the keys in the JSON file.
+
+Example:
+
+```
+ {
+ 	"controlPort": 9077,
+ 	"logLevel": "debug"
+ }
+```
+
+Using the configuration file you can set a default configuration for all Tor instances
+
+```
+{
+	"torConfig": {
+		"MaxCircuitDirtiness": "10"
+	}
+}
+```
+
+You can also specify a configuration for individual instances by setting the "instances" field to an array instead of an integer
+
+```
+{
+	"instances": [
+		{
+			"Config": {
+				"DataDirectory": "/tmp/my-tor-dir1"
+			}
+		},
+		{
+			"Config": {
+				"DataDirectory": "/tmp/my-tor-dir2"
+			}
+		}
+	]
+}
+```
 
 ## Control Server
 

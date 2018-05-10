@@ -5,8 +5,8 @@ const HTTPServer = require('./HTTPServer');
 const rpc = require('jrpc2');
 
 class ControlServer {
-	constructor(logger) {
-		this.torPool = new TorPool(null, null, logger);
+	constructor(logger, nconf) {
+		this.torPool = new TorPool(null, null, logger, nconf);
 		this.logger = logger;
 
 		let server = this.server = new rpc.Server();
@@ -33,6 +33,15 @@ class ControlServer {
 			});
 		}).bind(this) );
 
+		server.expose('addInstances', (function (instances) {
+			return new Promise((resolve, reject) => {
+				this.torPool.add(instances, (error, instances) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		}).bind(this) );
+
 		server.expose('removeInstances', (function (instances) {
 			return new Promise((resolve, reject) => {
 				this.torPool.remove(instances, (error) => {
@@ -42,8 +51,22 @@ class ControlServer {
 			});
 		}).bind(this) );
 
+		server.expose('removeInstancesAt', (function (instance_index) {
+			return new Promise((resolve, reject) => {
+				this.torPool.remove_at(instance_index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		}).bind(this) );
+
 		server.expose('newIps', (function() {
 			this.torPool.new_ips();
+			return Promise.resolve();
+		}).bind(this) );
+
+		server.expose('newIpAt', (function(index) {
+			this.torPool.new_ip_at(index);
 			return Promise.resolve();
 		}).bind(this) );
 
@@ -70,13 +93,12 @@ class ControlServer {
 	}
 
 	createTorPool(options) {
-		this.torPool = new TorPool(null, options, this.logger);
-		this.torPool;
+		this.torPool = new TorPool(null, options, this.logger, this.nconf);
 		return Promise.resolve();
 	}
 
 	createSOCKSServer(port) {
-		this.socksServer = new SOCKSServer(this.torPool, this.logger);
+		this.socksServer = new SOCKSServer(this.torPool, this.logger, this.nconf);
 		this.socksServer.listen(port || 9050);
 		this.logger && this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
@@ -84,7 +106,7 @@ class ControlServer {
 	}
 
 	createHTTPServer(port) {
-		this.httpServer = new HTTPServer(this.torPool, this.logger);
+		this.httpServer = new HTTPServer(this.torPool, this.logger, this.nconf);
 		this.httpServer.listen(port || 9080);
 		this.logger && this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
@@ -92,7 +114,7 @@ class ControlServer {
 	}
 
 	createDNSServer(port) {
-		this.dnsServer = new DNSServer(this.torPool, this.logger);
+		this.dnsServer = new DNSServer(this.torPool, this.logger, this.nconf);
 		this.dnsServer.serve(port || 9053);
 		this.logger && this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
