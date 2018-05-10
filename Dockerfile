@@ -33,7 +33,7 @@ RUN npm install
 
 ADD . /app
 
-RUN useradd -ms /bin/bash tor
+RUN useradd -ms /bin/bash tor_router
 
 USER tor_router
 
