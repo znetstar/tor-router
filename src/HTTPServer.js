@@ -96,7 +96,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${hostname}:${port}`)
+				logger && logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${hostname}:${port}`)
 				var outbound_socket;
 
 				let onClose = (error) => {

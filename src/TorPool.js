@@ -24,17 +24,34 @@ const _ = require('lodash');
 const path = require('path');
 const nanoid = require('nanoid');
 const fs = require('fs');
+const WeightedList = require('js-weighted-list');
+
+const load_balance_methods = {
+	round_robin: function (instances) {
+		return instances.rotate(1);
+	},
+	weighted: function (instances) {
+		if (!instances._weighted_list) {
+			instances._weighted_list = new WeightedList(
+				instances.map((instance) => {
+					return [ instance.id, instance.definition.Weight, instance ]
+				})
+			);
+		}
+		return instances._weighted_list.peek(instances.length).map((element) => element.data);
+	}
+};
 
 class TorPool extends EventEmitter {
-	constructor(tor_path, default_config, logger, nconf) {
+	constructor(tor_path, default_config, logger, nconf, data_directory, load_balance_method) {
 		super();
-
+		this._instances = [];
 		default_config = _.extend({}, (default_config || {}), nconf.get('torConfig'));
 		this.default_tor_config = default_config;
-		this.data_directory = nconf.get('parentDataDirectory');
+		this.data_directory = data_directory || nconf.get('parentDataDirectory');
+		this.load_balance_method = load_balance_method || nconf.get('loadBalanceMethod');
 		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
 		this.tor_path = tor_path || 'tor';
-		this._instances = [];
 		this.logger = logger;
 		this.nconf = nconf;
 	}
@@ -47,7 +64,7 @@ class TorPool extends EventEmitter {
 		instance_definition.Config = instance_definition.Config || {};
 		instance_definition.Config = _.extend(instance_definition.Config, this.default_tor_config);
 		let instance_id = nanoid();
-		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, instance_id);
+		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
 		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.logger, this.nconf);
 		instance.id = instance_id;
 		instance.definition = instance_definition;
@@ -95,7 +112,7 @@ class TorPool extends EventEmitter {
 	}
 
 	next() {
-		this._instances = this._instances.rotate(1);
+		this._instances = load_balance_methods[this.nconf.get('loadBalanceMethod')](this._instances);
 		return this.instances[0];
 	}
 
@@ -115,5 +132,7 @@ class TorPool extends EventEmitter {
 		this.instances[index].new_ip();
 	}
 };
+
+TorPool.LoadBalanceMethods = load_balance_methods;
 
 module.exports = TorPool;

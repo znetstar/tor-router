@@ -22,10 +22,10 @@ class TorProcess extends EventEmitter {
 	}
 
 	exit(callback) {
-		this.process.once('exit', (code) => {
+		this.once('process_exit', (code) => {
 			callback && callback(null, code);
 		});
-		this.process.kill('SIGKILL');
+		this.process.kill('SIGINT');
 	}
 
 	new_ip() {
@@ -73,8 +73,11 @@ class TorProcess extends EventEmitter {
 				shell: '/bin/bash'
 			});
 
-			tor.on('exit', () => {
-				del.sync(this.tor_config.DataDirectory);
+			tor.on('close', (code) => {
+				this.emit('process_exit', code);
+				if (this.definition && !this.definition.Name) {
+					del.sync(this.tor_config.DataDirectory);
+				}
 			});
 
 			tor.stderr.on('data', (data) => {

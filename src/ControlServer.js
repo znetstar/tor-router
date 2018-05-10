@@ -8,6 +8,7 @@ class ControlServer {
 	constructor(logger, nconf) {
 		this.torPool = new TorPool(null, null, logger, nconf);
 		this.logger = logger;
+		this.nconf = nconf;
 
 		let server = this.server = new rpc.Server();
 		server.expose('createTorPool', this.createTorPool.bind(this));
@@ -20,7 +21,7 @@ class ControlServer {
 				if (!this.torPool)
 					return reject({ message: 'No pool created' });
 
-				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid } )) );		
+				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight } )) );		
 			});
 		}).bind(this));
 
@@ -51,7 +52,7 @@ class ControlServer {
 			});
 		}).bind(this) );
 
-		server.expose('removeInstancesAt', (function (instance_index) {
+		server.expose('removeInstanceAt', (function (instance_index) {
 			return new Promise((resolve, reject) => {
 				this.torPool.remove_at(instance_index, (error) => {
 					if (error) reject(error);
@@ -80,6 +81,14 @@ class ControlServer {
 			return Promise.resolve();
 		}).bind(this) );
 
+		server.expose('setTorConfig', (function (config) {
+			this.nconf.set('torConfig', config);
+			return Promise.resolve();
+		}).bind(this));
+
+		server.expose('getTorConfig', (function (config) {
+			return Promise.resolve(this.nconf.get('torConfig'));
+		}).bind(this));
 	}
 
 	listen(port, callback) {  

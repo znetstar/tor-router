@@ -3,7 +3,7 @@ const UDPServer = require('native-dns').UDPServer;
 
 class DNSServer extends UDPServer {
 	constructor(tor_pool, logger, nconf) {
-		super(this.nconf.get('dns:options'));
+		super(nconf.get('dns:options'));
 		this.logger = logger;
 		this.tor_pool = tor_pool;
 
@@ -21,7 +21,7 @@ class DNSServer extends UDPServer {
 						if (!err && answer) {
 							for (let a of answer.answer){
 								res.answer.push(a);
-								this.logger && this.logger.verbose(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port} → ${a.address}`)
+								this.logger && this.logger.verbose(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${a.address}`)
 							}
 						}
 					});	

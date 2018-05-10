@@ -62,10 +62,15 @@ let argv_config = require('yargs')
 			alias: 'parentDataDirectory',
 			describe: 'Parent directory that will contain the data directories for the instances',
 			demand: false
+		},
+		b: {
+			alias: "loadBalanceMethod",
+			describe: 'Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted". [default: round_robin]',
+			demand: false
 		}
 	});
 
-let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", 'PARENT_DATA_DIRECTORIES', "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel", 'parentDataDirectories' ];
+let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", 'PARENT_DATA_DIRECTORIES', 'LOAD_BALANCE_METHOD', "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel", 'parentDataDirectories', 'loadBalanceMethod'];
 
 nconf
 	.env({
@@ -115,6 +120,10 @@ let dns_port = nconf.get('dnsPort');
 let http_port = nconf.get('httpPort');
 let control_port = nconf.get('controlPort');
 
+if (typeof(control_port) === 'boolean') {
+	control_port = 9077;
+	nconf.set('controlPort', 9077);
+}
 
 let control = new ControlServer(logger, nconf);
 
@@ -123,14 +132,26 @@ process.on('SIGHUP', () => {
 });
 
 if (socks_port) {
+	if (typeof(socks_port) === 'boolean') {
+		socks_port = 9050;
+		nconf.set('socksPort', 9077);
+	}
 	let socks = control.createSOCKSServer(socks_port);
 }
 
 if (http_port) {
+	if (typeof(http_port) === 'boolean') {
+		http_port = 9080;
+		nconf.set('httpPort', 9077);
+	}
 	let http = control.createHTTPServer(http_port);
 }
 
 if (dns_port) {
+	if (typeof(dns_port) === 'boolean') {
+		dns_port = 9053;
+		nconf.set('dnsPort', 9077);
+	}
 	let dns = control.createDNSServer(dns_port);
 }
 
@@ -149,6 +170,12 @@ function cleanUp(error) {
 	async.each(control.torPool.instances, (instance, next) => {
 		instance.exit(next);
 	}, (exitError) => {
+		if (error) {
+			console.error(error.stack);
+		}
+		if (exitError){
+			console.error(exitError);
+		}
 		process.exit(Number(Boolean(error || exitError)));
 	});
 }
