@@ -11,8 +11,8 @@ temp.track();
 class TorProcess extends EventEmitter {
 	constructor(tor_path, config, logger, nconf) {
 		super();
-
-		this.tor_path = tor_path || 'tor';
+		
+		this.tor_path = tor_path || nconf.get('torPath');
 		this.nconf = nconf;
 		this.logger = logger;
 

@@ -51,7 +51,7 @@ class TorPool extends EventEmitter {
 		this.data_directory = data_directory || nconf.get('parentDataDirectory');
 		this.load_balance_method = load_balance_method || nconf.get('loadBalanceMethod');
 		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
-		this.tor_path = tor_path || 'tor';
+		this.tor_path = tor_path || nconf.get('torPath');
 		this.logger = logger;
 		this.nconf = nconf;
 	}

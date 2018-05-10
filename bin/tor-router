@@ -67,10 +67,15 @@ let argv_config = require('yargs')
 			alias: "loadBalanceMethod",
 			describe: 'Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted". [default: round_robin]',
 			demand: false
+		},
+		t: {
+			alias: "torPath",
+			describe: "Provide the path for the Tor executable that will be used",
+			demand: false
 		}
 	});
 
-let env_whitelist = [ "CONTROL_PORT", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", 'PARENT_DATA_DIRECTORIES', 'LOAD_BALANCE_METHOD', "controlPort", "instances", "socksPort", "dnsPort", "httpPort", "logLevel", 'parentDataDirectories', 'loadBalanceMethod'];
+let env_whitelist = [ "CONTROL_PORT", "TOR_PATH", "INSTANCES", "SOCKS_PORT", "DNS_PORT", "HTTP_PORT", "LOG_LEVEL", 'PARENT_DATA_DIRECTORIES', 'LOAD_BALANCE_METHOD', "controlPort", "torPath", "instances", "socksPort", "dnsPort", "httpPort", "logLevel", 'parentDataDirectories', 'loadBalanceMethod'];
 
 nconf
 	.env({

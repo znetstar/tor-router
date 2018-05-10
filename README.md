@@ -6,7 +6,7 @@ Tor Router also includes a DNS forward proxy and a HTTP forward proxy as well, w
 
 ## Building and Running
 
-Installation requirements are node.js and tor. Make sure "tor" is in your PATH.
+The only installation requirement is node.js. Tor will be downloaded when the node modules are installed.
 
 To install run: `npm install`
 To start run: `bin/tor-router`
@@ -33,6 +33,7 @@ The following command line switches and their environment variable equivalents a
 |-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
 |-p, --parentDataDirectory|PARENT_DATA_DIRECTORY      |Parent directory that will contain the data directories for the instances|
 |-b, --loadBalanceMethod|LOAD_BALANCE_METHOD          |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".|
+|-t, --torPath|TOR_PATH|Provide the path for the Tor executable that will be used| 
 
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
 
