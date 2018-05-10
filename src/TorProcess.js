@@ -23,7 +23,7 @@ class TorProcess extends EventEmitter {
 
 	exit(callback) {
 		this.process.once('exit', (code) => {
-			del(this.tor_config.DataDirectory).then(() => callback && callback(null, code)).catch((error) => callback && callback(error, code));
+			callback && callback(null, code);
 		});
 		this.process.kill('SIGKILL');
 	}
@@ -71,6 +71,10 @@ class TorProcess extends EventEmitter {
 				stdio: ['ignore', 'pipe', 'pipe'],
 				detached: false,
 				shell: '/bin/bash'
+			});
+
+			tor.on('exit', () => {
+				del.sync(this.tor_config.DataDirectory);
 			});
 
 			tor.stderr.on('data', (data) => {
