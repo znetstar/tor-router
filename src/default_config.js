@@ -4,7 +4,7 @@ temp.track();
 module.exports = {
 	"controlPort": 9077,
 	"parentDataDirectory": temp.mkdirSync(),
-	"socksPort": 9050,
+	"socksPort": null,
 	"dnsPort": null,
 	"httpPort": null,
 	"logLevel": "info",
@@ -13,7 +13,7 @@ module.exports = {
 		"Log": "notice stdout",
 		"NewCircuitPeriod": "10"
 	},
-	"instances": 1,
+	"instances": null,
 	"dns": {
 		"options": {},
 		"timeout": null

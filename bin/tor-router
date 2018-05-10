@@ -32,13 +32,13 @@ let argv_config = require('yargs')
 		},
 		j: {
 			alias: 'instances',
-			describe: 'Number of instances using the default config [default: 1]',
+			describe: 'Number of instances using the default config',
 			demand: false
 			// ,default: 1
 		},
 		s: {
 			alias: 'socksPort',
-			describe: 'Port the SOCKS5 Proxy server will bind to [default: 9050]',
+			describe: 'Port the SOCKS5 Proxy server will bind to',
 			demand: false,
 			// ,default: 9050
 		},
