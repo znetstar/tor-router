@@ -32,7 +32,7 @@ The following command line switches and their environment variable equivalents a
 |-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
 |-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
 |-p, --parentDataDirectory|PARENT_DATA_DIRECTORY      |Parent directory that will contain the data directories for the instances|
-|-b, --loadBalanceMethod|LOAD_BALANCE_METHOD|Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".|
+|-b, --loadBalanceMethod|LOAD_BALANCE_METHOD          |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".|
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
 
 ## Configuration
@@ -60,19 +60,24 @@ Using the configuration file you can set a default configuration for all Tor ins
 }
 ```
 
-You can also specify a configuration for individual instances by setting the "instances" field to an array instead of an integer
+You can also specify a configuration for individual instances by setting the "instances" field to an array instead of an integer.
+
+Instances can optionally be assigned name and a weight. If the `loadBalanceMethod` config variable is set to "weighted" the weight field will determine how frequently the instance is used. If the instance is assigned a name the data directory will be preserved when the process is killed saving time when Tor is restarted.
 
 ```
 {
+	"loadBalanceMethod": "weighted",
 	"instances": [
 		{
+			"Name": "instance-1"
+			"Weight": 10,
 			"Config": {
-				"DataDirectory": "/tmp/my-tor-dir1"
 			}
 		},
 		{
+			"Name": "instance-2",
+			"Weight": 5,
 			"Config": {
-				"DataDirectory": "/tmp/my-tor-dir2"
 			}
 		}
 	]
