@@ -32,7 +32,7 @@ The following command line switches and their environment variable equivalents a
 |-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
 |-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
 |-p, --parentDataDirectory|PARENT_DATA_DIRECTORY      |Parent directory that will contain the data directories for the instances|
-|-b, --loadBalanceMethod|LOAD_BALANCE_METHOD          |Method that will be used to sort the instances between each request. Currently supports| "round_robin" and "weighted".|
+|-b, --loadBalanceMethod|LOAD_BALANCE_METHOD          |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".|
 
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
 
@@ -114,7 +114,7 @@ Example (in node):
 	})
 ```
 
-A full list of available RPC Methods can be [found here](https://github.com/znetstar/tor-router/docs/rpc-methods.md)
+A full list of available RPC Methods can be [found here](https://github.com/znetstar/tor-router/blob/master/docs/rpc-methods.md)
 
 ## Test
 
