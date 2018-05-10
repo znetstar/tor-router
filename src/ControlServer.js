@@ -86,9 +86,18 @@ class ControlServer {
 			return Promise.resolve();
 		}).bind(this));
 
-		server.expose('getTorConfig', (function (config) {
+		server.expose('getTorConfig', (function () {
 			return Promise.resolve(this.nconf.get('torConfig'));
 		}).bind(this));
+
+		server.expose('getLoadBalanceMethod', (function () {
+			return Promise.resolve(this.nconf.get('loadBalanceMethod'));
+		}).bind(this));	
+
+		server.expose('setLoadBalanceMethod', (function (loadBalanceMethod) {
+			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
+			return Promise.resolve();
+		}).bind(this));	
 	}
 
 	listen(port, callback) {  
