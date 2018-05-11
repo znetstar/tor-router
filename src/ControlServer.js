@@ -146,6 +146,40 @@ class ControlServer {
 			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
 			return Promise.resolve();
 		}).bind(this));	
+
+		server.expose('getInstanceConfigByName', (function (name, keyword) {
+			return new Promise((resolve, reject) => {
+				this.torPool.get_config_by_name(name, keyword, (error, value) => {
+					if (error) reject(error);
+					else resolve(value);
+				});
+			});
+		}).bind(this));	
+
+		server.expose('getInstanceConfigAt', (function (index, keyword) {
+			return new Promise((resolve, reject) => {
+				this.torPool.get_config_at(index, keyword, (error, value) => {
+					if (error) reject(error);
+					else resolve(value);
+				});
+			});
+		}).bind(this));	
+
+		server.expose('setInstanceConfigByName', (function (name, keyword, value) {
+			return new Promise((resolve, reject) => {
+				this.torPool.set_config_by_name(name, keyword, value, (error) => {
+					if (error) reject(error);
+				});
+			});
+		}).bind(this));
+
+		server.expose('setInstanceConfigAt', (function (index, keyword, value) {
+			return new Promise((resolve, reject) => {
+				this.torPool.set_config_at(index, keyword, value, (error) => {
+					if (error) reject(error);
+				});
+			});
+		}).bind(this));
 	}
 
 	listen(port, callback) {  

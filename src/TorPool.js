@@ -164,6 +164,30 @@ class TorPool extends EventEmitter {
 	}
 
 	/* End Deprecated */
+
+	get_config_by_name(name, keyword, callback) {
+		let instance = this.instance_by_name(name);
+		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		instance.get_config(keyword, callback);
+	}
+
+	set_config_by_name(name, keyword, value, callback) {
+		let instance = this.instance_by_name(name);
+		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		instance.set_config(keyword, value, callback);
+	}
+
+	get_config_at(index, keyword, callback) {
+		let instance = this.instances[index];
+		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
+		instance.get_config(keyword, callback);
+	}
+
+	set_config_at(index, keyword, value, callback) {
+		let instance = this.instances[index];
+		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
+		instance.set_config(keyword, value, callback);
+	}
 };
 
 TorPool.LoadBalanceMethods = load_balance_methods;

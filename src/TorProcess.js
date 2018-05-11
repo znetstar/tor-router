@@ -68,12 +68,21 @@ class TorProcess extends EventEmitter {
 		return this._controller || null;
 	}
 
-	getConfig(callback) {
+	/* Passthrough to granax */
+	get_config(keyword, callback) {
 		if (!this.controller) {
 			return callback(new Error(`Controller is not connected`));
 		}
 
+		this.controller.getConfig(keyword, callback);
+	}
 
+	set_config(keyword, value, callback) {
+		if (!this.controller) {
+			return callback(new Error(`Controller is not connected`));
+		}
+
+		this.controller.setConfig(keyword, value, callback);
 	}
 
 	create(callback) {
