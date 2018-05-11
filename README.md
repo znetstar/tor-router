@@ -6,7 +6,7 @@ Tor Router also includes a DNS forward proxy and a HTTP forward proxy as well, w
 
 ## Building and Running
 
-The only installation requirement is node.js. Tor will be downloaded when the node modules are installed.
+The only installation requirement is node.js. Tor is bundled with the application. To use an external Tor executable use the "--torPath" command line switch or set the "TOR_PATH" environment variable.
 
 To install run: `npm install`
 To start run: `bin/tor-router`
