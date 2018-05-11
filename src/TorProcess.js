@@ -34,19 +34,6 @@ class TorProcess extends EventEmitter {
 		this.process.kill('SIGINT');
 	}
 
-	/* Begin Deprecated */
-
-	new_ip(callback) {
-		this.logger && this.logger.warn(`TorProcess.new_ip is deprecated, use TorProcess.new_identity`);
-		return this.new_identity(callback);
-	}
-
-	/* End Deprecated */
-
-	new_identity(callback) {
-		this.logger.info(`[tor-${this.instance_name}]: requested a new identity`);
-		this.controller.cleanCircuits(callback || (() => {}));
-	}
 
 	get instance_name() {
 		return (this.definition && this.definition.Name) || this.process.pid;
@@ -69,12 +56,18 @@ class TorProcess extends EventEmitter {
 	}
 
 	/* Passthrough to granax */
+
+	new_identity(callback) {
+		this.logger.info(`[tor-${this.instance_name}]: requested a new identity`);
+		this.controller.cleanCircuits(callback || (() => {}));
+	}
+
 	get_config(keyword, callback) {
 		if (!this.controller) {
 			return callback(new Error(`Controller is not connected`));
 		}
 
-		this.controller.getConfig(keyword, callback);
+		return this.controller.getConfig(keyword, callback);
 	}
 
 	set_config(keyword, value, callback) {
@@ -82,8 +75,25 @@ class TorProcess extends EventEmitter {
 			return callback(new Error(`Controller is not connected`));
 		}
 
-		this.controller.setConfig(keyword, value, callback);
+		return this.controller.setConfig(keyword, value, callback);
 	}
+
+	signal(signal, callback) {
+		if (!this.controller) {
+			return callback(new Error(`Controller is not connected`));
+		}
+
+		return this.controller.signal(signal, callback);
+	}
+
+	/* Begin Deprecated */
+
+	new_ip(callback) {
+		this.logger && this.logger.warn(`TorProcess.new_ip is deprecated, use TorProcess.new_identity`);
+		return this.new_identity(callback);
+	}
+
+	/* End Deprecated */
 
 	create(callback) {
 		async.auto({

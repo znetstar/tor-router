@@ -160,7 +160,7 @@ class TorPool extends EventEmitter {
 
 	new_ip_at(index, callback) {
 		this.logger && this.logger.warn(`TorPool.new_ip_at is deprecated, use TorPool.new_identity_at`);
-		return this.new_identity_at(inde, callback);
+		return this.new_identity_at(index, callback);
 	}
 
 	/* End Deprecated */
@@ -187,6 +187,24 @@ class TorPool extends EventEmitter {
 		let instance = this.instances[index];
 		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
 		instance.set_config(keyword, value, callback);
+	}
+
+	signal_all(signal, callback) {
+		async.each(this.instances, (instance, next) => {
+			instance.signal(signal, callback);
+		}, callback);
+	}
+
+	signal_by_name(name, signal, callback) {
+		let instance = this.instance_by_name(name);
+		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		instance.signal(signal, callback);
+	}
+
+	signal_at(index, signal, callback) {
+		let instance = this.instances[index];
+		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
+		instance.signal(signal, callback);
 	}
 };
 

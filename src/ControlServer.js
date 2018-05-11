@@ -169,6 +169,7 @@ class ControlServer {
 			return new Promise((resolve, reject) => {
 				this.torPool.set_config_by_name(name, keyword, value, (error) => {
 					if (error) reject(error);
+					else resolve();
 				});
 			});
 		}).bind(this));
@@ -177,6 +178,35 @@ class ControlServer {
 			return new Promise((resolve, reject) => {
 				this.torPool.set_config_at(index, keyword, value, (error) => {
 					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+
+		server.expose('signalAllInstances', (function (signal) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_all(signal, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('signalInstanceAt', (function (index, signal, callback) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_at(index, signal, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('signalInstanceByName', (function (name, signal, callback) {
+			return new Promise((resolve, reject) => {
+				this.torPool.signal_by_name(name, signal, (error) => {
+					if (error) reject(error);
+					else resolve();
 				});
 			});
 		}).bind(this));
