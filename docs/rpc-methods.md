@@ -40,15 +40,23 @@ Removes a number of instances
 
 # removeInstanceAt(Integrer)
 
-Remove a specific instance from the pool
+Remove a specific instance from the pool by it's index
 
-# newIps()
+# removeInstanceByName(String)
 
-Change the Tor Circuit on all instances
+Remove a specific instance from the pool by it's name
 
-# newIpAt(Integrer)
+# newIdentites()
 
-Change the Tor Circuit on a specific instance
+Get new identites for all instances
+
+# newIdentityAt(Integrer)
+
+Get a new identity for a specific instance by it's index
+
+# newIdentityByName(String)
+
+Get a new identity for a specific instance by it's name
 
 # nextInstance()
 

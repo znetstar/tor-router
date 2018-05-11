@@ -61,6 +61,15 @@ class ControlServer {
 			});
 		}).bind(this) );
 
+		server.expose('removeInstanceByName', (function (instance_name) {
+			return new Promise((resolve, reject) => {
+				this.torPool.remove_by_name(instance_name, (error) => {
+					if (error) reject(error);
+					else resolve();
+				}); 
+			});
+		}).bind(this) );
+
 		server.expose('newIdentites', (function() {
 			return new Promise((resolve, reject) => {
 				this.torPool.new_identites((error) => {
@@ -73,6 +82,15 @@ class ControlServer {
 		server.expose('newIdentityAt', (function(index) {
 			return new Promise((resolve, reject) => {
 				this.torPool.new_identity_at(index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('newIdentityByName', (function(name) {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identity_by_name(name, (error) => {
 					if (error) reject(error);
 					else resolve();
 				});

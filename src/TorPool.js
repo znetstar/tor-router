@@ -97,6 +97,10 @@ class TorPool extends EventEmitter {
 		return this.add(instances, callback);
 	}
 
+	instance_by_name(name) {
+		return this.instances.filter((i) => i.definition.Name === name)[0];
+	}
+
 	remove(instances, callback) {
 		let instances_to_remove = this._instances.splice(0, instances);
 		async.each(instances_to_remove, (instance, next) => {
@@ -105,10 +109,15 @@ class TorPool extends EventEmitter {
 	}
 
 	remove_at(instance_index, callback) {
-		let instance = this._instances.slice(instance_index, 1);
-		instance.exit(() => {
-			callback();
-		});
+		let instance = this._instances.splice(instance_index, 1);
+		instance.exit(callback);
+	}
+
+	remove_by_name(instance_name, callback) {
+		let instance = this.instance_by_name(instance_name);
+		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		let instance_index = (this.instances.indexOf(instance));;
+		return this.remove_at(instance_index, callback);
 	}
 
 	next() {
@@ -134,6 +143,12 @@ class TorPool extends EventEmitter {
 
 	new_identity_at(index, callback) {
 		this.instances[index].new_identity(callback);
+	}
+
+	new_identity_by_name(name, callback) {
+		let instance = this.instance_by_name(name);
+		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		instance.new_identity(callback);
 	}
 
 	/* Begin Deprecated */

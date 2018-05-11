@@ -68,6 +68,14 @@ class TorProcess extends EventEmitter {
 		return this._controller || null;
 	}
 
+	getConfig(callback) {
+		if (!this.controller) {
+			return callback(new Error(`Controller is not connected`));
+		}
+
+
+	}
+
 	create(callback) {
 		async.auto({
 			dnsPort: (callback) => getPort().then(port => callback(null, port)),
