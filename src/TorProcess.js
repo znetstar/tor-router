@@ -6,15 +6,21 @@ const getPort = require('get-port');
 const del = require('del');
 const EventEmitter = require('eventemitter2').EventEmitter2;
 const temp = require('temp');
+const { TorController } = require('granax');
+const { connect } = require('net');
+const shell = require('shelljs');
+const crypto = require('crypto');
 temp.track();
 
 class TorProcess extends EventEmitter {
-	constructor(tor_path, config, logger, nconf) {
+	constructor(tor_path, config, logger, nconf, granax_options) {
 		super();
 		
 		this.tor_path = tor_path || nconf.get('torPath');
 		this.nconf = nconf;
 		this.logger = logger;
+		this.granax_options = granax_options || nconf.get('granaxOptions');
+		this.control_password = crypto.randomBytes(128).toString('base64');
 
 		config.DataDirectory = config.DataDirectory || temp.mkdirSync();
 
@@ -45,14 +51,25 @@ class TorProcess extends EventEmitter {
 		return this._socks_port || null;
 	}
 
+	get control_port() {
+		return this._control_port || null;
+	}
+
+	get controller() {
+		return this._controller;
+	}
+
 	create(callback) {
 		async.auto({
 			dnsPort: (callback) => getPort().then(port => callback(null, port)),
 			socksPort: (callback) => getPort().then(port => callback(null, port)),
-			configPath: ['dnsPort', 'socksPort', (context, callback) => {
+			controlPort: (callback) => getPort().then(port => callback(null, port)),
+			configPath: ['dnsPort', 'socksPort', 'controlPort', (context, callback) => {
 				let options = {
 					DNSPort: `127.0.0.1:${context.dnsPort}`,
 					SocksPort: `127.0.0.1:${context.socksPort}`,
+					ControlPort: `127.0.0.1:${context.controlPort}`,
+					HashedControlPassword: shell.exec(`${this.tor_path} --hash-password "${this.control_password}"`, { async: false, silent: true }).stdout.trim()
 				};
 				let config = _.extend(_.extend({}, this.tor_config), options);
 				let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join("\n");
@@ -70,12 +87,13 @@ class TorProcess extends EventEmitter {
 
 			this._dns_port = context.dnsPort;
 			this._socks_port = context.socksPort;
+			this._control_port = context.controlPort;
 
 			let tor = spawn(this.tor_path, ['-f', context.configPath], {
 				stdio: ['ignore', 'pipe', 'pipe'],
-				detached: false,
-				shell: '/bin/bash'
+				detached: false
 			});
+
 
 			tor.on('close', (code) => {
 				this.emit('process_exit', code);
@@ -95,6 +113,22 @@ class TorProcess extends EventEmitter {
 				this.logger && this.logger.info(`[tor-${this.instance_name}]: tor is ready`);
 			});
 
+			this.on('control_listen', () => {
+				this._controller = new TorController(connect(this._control_port), _.extend({ authOnConnect: false }, this.granax_options));
+				this.controller.on('ready', () => {
+					this.logger && this.logger.debug(`[tor-${this.instance_name}]: connected to tor control port`);
+					this.controller.authenticate(`"${this.control_password}"`, (err) => {
+						if (err) {
+							this.logger && this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
+							this.emit('error', err);
+						} else {
+							this.logger && this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
+							this.emit('controller_ready');
+						}
+					});
+				});
+			});
+
 			tor.stdout.on('data', (data) => {
 				let text = Buffer.from(data).toString('utf8');
 				let msg = text.split('] ').pop();
@@ -102,17 +136,29 @@ class TorProcess extends EventEmitter {
 					this.emit('ready');
 				}
 
+				if (text.indexOf('Opening Control listener on') !== -1) {
+					this.emit('control_listen');
+				}
+
+				if (text.indexOf('Opening Socks listener on') !== -1) {
+					this.emit('socks_listen');
+				}
+
+				if (text.indexOf('Opening DNS listener on') !== -1) {
+					this.emit('dns_listen');
+				}
+
 				if (text.indexOf('[err]') !== -1) {
 					this.emit('error', new Error(msg));
-					this.logger && this.logger.error(`[tor-${tor.pid}]: ${msg}`);
+					this.logger && this.logger.error(`[tor-${this.instance_name}]: ${msg}`);
 				}
 
 				else if (text.indexOf('[notice]') !== -1) {
-					this.logger && this.logger.debug(`[tor-${tor.pid}]: ${msg}`);
+					this.logger && this.logger.debug(`[tor-${this.instance_name}]: ${msg}`);
 				}
 
 				else if (text.indexOf('[warn]') !== -1) {
-					this.logger && this.logger.warn(`[tor-${tor.pid}]: ${msg}`);
+					this.logger && this.logger.warn(`[tor-${this.instance_name}]: ${msg}`);
 				}
 			});
 

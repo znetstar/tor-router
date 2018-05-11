@@ -40,4 +40,5 @@ module.exports = {
 		"options": {},
 		"timeout": null
 	},
+	"granaxOptions": null
 };

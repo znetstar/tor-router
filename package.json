@@ -31,6 +31,7 @@
     "nanoid": "^1.0.2",
     "native-dns": "git+https://github.com/znetstar/node-dns.git",
     "nconf": "^0.10.0",
+    "shelljs": "^0.8.2",
     "socks-proxy-agent": "^3.0.1",
     "socksv5": "git+https://github.com/lee-elenbaas/socksv5.git",
     "temp": "^0.8.3",
