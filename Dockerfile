@@ -10,7 +10,7 @@ EXPOSE 9077
 
 ENV PARENT_DATA_DIRECTORTY /var/lib/tor-router
 
-ENV PATH $PATH:/app/bin 
+ENV PATH $PATH:/app/bin
 
 ADD package.json /app/package.json
 
