@@ -124,13 +124,31 @@ class TorPool extends EventEmitter {
 		});
 	}
 
-	new_ips() {
-		this.instances.forEach((tor) => tor.new_ip());
+	new_identites(callback) {
+		async.each(this.instances, (tor, next) => {
+			tor.new_identity(next);
+		}, (error) => {
+			callback && callback(error);
+		});
 	}
 
-	new_ip_at(index) {
-		this.instances[index].new_ip();
+	new_identity_at(index, callback) {
+		this.instances[index].new_identity(callback);
 	}
+
+	/* Begin Deprecated */
+
+	new_ips(callback) {
+		this.logger && this.logger.warn(`TorPool.new_ips is deprecated, use TorPool.new_identites`);
+		return this.new_identites(callback);
+	}
+
+	new_ip_at(index, callback) {
+		this.logger && this.logger.warn(`TorPool.new_ip_at is deprecated, use TorPool.new_identity_at`);
+		return this.new_identity_at(inde, callback);
+	}
+
+	/* End Deprecated */
 };
 
 TorPool.LoadBalanceMethods = load_balance_methods;

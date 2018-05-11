@@ -93,10 +93,10 @@ A JSON-RPC 2 TCP Server will listen on port 9077 by default. Using the rpc serve
 Example (in node):
 
 ```
-	var net = require('net');
+	const net = require('net');
 
-	const client = net.createConnection({ port: 9077 }, () => {
-		var rpcRequest = {
+	let client = net.createConnection({ port: 9077 }, () => {
+		let rpcRequest = {
 			"method": "createInstances",
 			"params": [3], 
 			"jsonrpc":"2.0", 
@@ -106,8 +106,8 @@ Example (in node):
 	});
 
 	client.on('data', (chunk) => {
-		var rawResponse = chunk.toString('utf8');
-		var rpcResponse = JSON.parse(rawResponse);
+		let rawResponse = chunk.toString('utf8');
+		let rpcResponse = JSON.parse(rawResponse);
 		console.log(rpcResponse)
 		if (rpcResponse.id === 1) {
 			console.log('Three instances have been created!')

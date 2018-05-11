@@ -34,9 +34,18 @@ class TorProcess extends EventEmitter {
 		this.process.kill('SIGINT');
 	}
 
-	new_ip() {
-		this.logger.info(`[tor-${this.instance_name}]: has requested a new identity`);
-		this.process.kill('SIGHUP');
+	/* Begin Deprecated */
+
+	new_ip(callback) {
+		this.logger && this.logger.warn(`TorProcess.new_ip is deprecated, use TorProcess.new_identity`);
+		return this.new_identity(callback);
+	}
+
+	/* End Deprecated */
+
+	new_identity(callback) {
+		this.logger.info(`[tor-${this.instance_name}]: requested a new identity`);
+		this.controller.cleanCircuits(callback || (() => {}));
 	}
 
 	get instance_name() {
@@ -56,7 +65,7 @@ class TorProcess extends EventEmitter {
 	}
 
 	get controller() {
-		return this._controller;
+		return this._controller || null;
 	}
 
 	create(callback) {

@@ -61,15 +61,45 @@ class ControlServer {
 			});
 		}).bind(this) );
 
+		server.expose('newIdentites', (function() {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identites((error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		server.expose('newIdentityAt', (function(index) {
+			return new Promise((resolve, reject) => {
+				this.torPool.new_identity_at(index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		/* Begin Deprecated */
+
 		server.expose('newIps', (function() {
-			this.torPool.new_ips();
-			return Promise.resolve();
-		}).bind(this) );
+			return new Promise((resolve, reject) => {
+				this.torPool.new_ips((error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
 
 		server.expose('newIpAt', (function(index) {
-			this.torPool.new_ip_at(index);
-			return Promise.resolve();
-		}).bind(this) );
+			return new Promise((resolve, reject) => {
+				this.torPool.new_ip_at(index, (error) => {
+					if (error) reject(error);
+					else resolve();
+				});
+			});
+		}).bind(this));
+
+		/* End Deprecated */
 
 		server.expose('nextInstance', (function () {
 			this.torPool.next();
