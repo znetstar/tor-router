@@ -97,8 +97,8 @@ Example (in node):
 
 	let client = net.createConnection({ port: 9077 }, () => {
 		let rpcRequest = {
-			"method": "createInstances",
-			"params": [3], 
+			"method": "signalAllInstances",
+			"params": ["shutdown"], 
 			"jsonrpc":"2.0", 
 			"id": 1
 		};
@@ -116,6 +116,38 @@ Example (in node):
 ```
 
 A full list of available RPC Methods can be [found here](https://github.com/znetstar/tor-router/blob/master/docs/rpc-methods.md)
+
+## Tor Control Protocol
+
+You can retrieve or set the configuration of instances while they're running via the Tor Control Protocol.
+
+The example below will change the "MaxCircuitDirtiness" value for the first instance in the pool
+
+Example:
+```
+let rpcRequest = {
+	"method": "setInstanceConfigAt",
+	"params": [0, "MaxCircuitDirtiness", "20"], 
+	"jsonrpc":"2.0", 
+	"id": 1
+};
+client.write(JSON.stringify(rpcRequest));
+```
+
+You can also send signals directly to instances or to all instances in the pool via the control protocol. A list of all signals can be [found here](https://gitweb.torproject.org/torspec.git/tree/control-spec.txt)
+
+The example below will set the log level of all instances to "debug".
+
+Example:
+```
+let rpcRequest = {
+	"method": "signalAllInstances",
+	"params": ["DEBUG"], 
+	"jsonrpc":"2.0", 
+	"id": 1
+};
+client.write(JSON.stringify(rpcRequest));
+```
 
 ## Test
 

@@ -115,6 +115,8 @@ Works the same way as `setInstanceConfigAt` except takes an instance name instea
 
 Sends a signal using the control protocol to all instances
 
+A list of all signals can be [found here](https://gitweb.torproject.org/torspec.git/tree/control-spec.txt)
+
 # signalInstanceAt(Integrer: index, String: signal)
 
 Sends a signal using the control protocol to an instance identified by its index
