@@ -40,11 +40,11 @@ Removes a number of instances
 
 # removeInstanceAt(Integrer)
 
-Remove a specific instance from the pool by it's index
+Remove a specific instance from the pool by its index
 
 # removeInstanceByName(String)
 
-Remove a specific instance from the pool by it's name
+Remove a specific instance from the pool by its name
 
 # newIdentites()
 
@@ -52,11 +52,11 @@ Get new identites for all instances
 
 # newIdentityAt(Integrer)
 
-Get a new identity for a specific instance by it's index
+Get a new identity for a specific instance by its index
 
 # newIdentityByName(String)
 
-Get a new identity for a specific instance by it's name
+Get a new identity for a specific instance by its name
 
 # nextInstance()
 
@@ -70,14 +70,55 @@ Shutdown all Tor instances
 
 Retrieve the default Tor Config
 
-# setTorConfig
+# setTorConfig(Object)
 
 Set the default Tor Config
 
-# getLoadBalanceMethod
+# getLoadBalanceMethod()
 
 Get the current load balance method
 
-# setLoadBalanceMethod
+# setLoadBalanceMethod(String)
 
 Set the current load balance method
+
+# getInstanceConfigAt(Integrer: index, String: keyword)
+
+Retrieves the current value of an option set in the configuration by the index of the instance using the control protocol. 
+
+Example:
+
+The following would retrieve the path to the data directory of the instance
+
+```
+var rpcRequest = {
+	"method": "getInstanceConfigAt",
+	"params": [0, "DataDirectory"], 
+	"jsonrpc":"2.0", 
+	"id": 1
+};
+```
+
+# getInstanceConfigByName(String: name, String: keyword)
+
+Works the same way as `getInstanceConfigAt` except takes an instance name instead of an index
+
+# setInstanceConfigAt(Integrer: index, String: keyword, String: value)
+
+Sets the value in the configuration of an instance using the control protocol. Changes will be applied immediately.
+
+# setInstanceConfigByName(Integrer: index, String: keyword, String: value)
+
+Works the same way as `setInstanceConfigAt` except takes an instance name instead of an index
+
+# signalAllInstances(String)
+
+Sends a signal using the control protocol to all instances
+
+# signalInstanceAt(Integrer: index, String: signal)
+
+Sends a signal using the control protocol to an instance identified by its index
+
+# signalInstanceByName(String: name, String: signal)
+
+Sends a signal using the control protocol to an instance identified by its name
