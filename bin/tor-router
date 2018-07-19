@@ -139,7 +139,7 @@ process.on('SIGHUP', () => {
 if (socks_port) {
 	if (typeof(socks_port) === 'boolean') {
 		socks_port = 9050;
-		nconf.set('socksPort', 9077);
+		nconf.set('socksPort', socks_port);
 	}
 	let socks = control.createSOCKSServer(socks_port);
 }
@@ -147,7 +147,7 @@ if (socks_port) {
 if (http_port) {
 	if (typeof(http_port) === 'boolean') {
 		http_port = 9080;
-		nconf.set('httpPort', 9077);
+		nconf.set('httpPort', http_port);
 	}
 	let http = control.createHTTPServer(http_port);
 }
@@ -155,7 +155,7 @@ if (http_port) {
 if (dns_port) {
 	if (typeof(dns_port) === 'boolean') {
 		dns_port = 9053;
-		nconf.set('dnsPort', 9077);
+		nconf.set('dnsPort', dns_port);
 	}
 	let dns = control.createDNSServer(dns_port);
 }
