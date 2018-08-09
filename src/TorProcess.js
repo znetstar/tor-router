@@ -13,13 +13,11 @@ const crypto = require('crypto');
 temp.track();
 
 class TorProcess extends EventEmitter {
-	constructor(tor_path, config, logger, nconf, granax_options) {
+	constructor(tor_path, config, granax_options, logger) {
 		super();
-		
-		this.tor_path = tor_path || nconf.get('torPath');
-		this.nconf = nconf;
 		this.logger = logger;
-		this.granax_options = granax_options || nconf.get('granaxOptions');
+		this.tor_path = tor_path;
+		this.granax_options = granax_options;
 		this.control_password = crypto.randomBytes(128).toString('base64');
 
 		config.DataDirectory = config.DataDirectory || temp.mkdirSync();
@@ -89,7 +87,7 @@ class TorProcess extends EventEmitter {
 	/* Begin Deprecated */
 
 	new_ip(callback) {
-		this.logger && this.logger.warn(`TorProcess.new_ip is deprecated, use TorProcess.new_identity`);
+		this.logger.warn(`TorProcess.new_ip is deprecated, use TorProcess.new_identity`);
 		return this.new_identity(callback);
 	}
 
@@ -146,19 +144,19 @@ class TorProcess extends EventEmitter {
 
 			this.once('ready', () => {
 				this.ready = true;
-				this.logger && this.logger.info(`[tor-${this.instance_name}]: tor is ready`);
+				this.logger.info(`[tor-${this.instance_name}]: tor is ready`);
 			});
 
 			this.on('control_listen', () => {
 				this._controller = new TorController(connect(this._control_port), _.extend({ authOnConnect: false }, this.granax_options));
 				this.controller.on('ready', () => {
-					this.logger && this.logger.debug(`[tor-${this.instance_name}]: connected to tor control port`);
+					this.logger.debug(`[tor-${this.instance_name}]: connected to tor control port`);
 					this.controller.authenticate(`"${this.control_password}"`, (err) => {
 						if (err) {
-							this.logger && this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
+							this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
 							this.emit('error', err);
 						} else {
-							this.logger && this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
+							this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
 							this.emit('controller_ready');
 						}
 					});
@@ -186,15 +184,15 @@ class TorProcess extends EventEmitter {
 
 				if (text.indexOf('[err]') !== -1) {
 					this.emit('error', new Error(msg));
-					this.logger && this.logger.error(`[tor-${this.instance_name}]: ${msg}`);
+					this.logger.error(`[tor-${this.instance_name}]: ${msg}`);
 				}
 
 				else if (text.indexOf('[notice]') !== -1) {
-					this.logger && this.logger.debug(`[tor-${this.instance_name}]: ${msg}`);
+					this.logger.debug(`[tor-${this.instance_name}]: ${msg}`);
 				}
 
 				else if (text.indexOf('[warn]') !== -1) {
-					this.logger && this.logger.warn(`[tor-${this.instance_name}]: ${msg}`);
+					this.logger.warn(`[tor-${this.instance_name}]: ${msg}`);
 				}
 			});
 

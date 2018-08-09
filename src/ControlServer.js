@@ -6,7 +6,7 @@ const rpc = require('jrpc2');
 
 class ControlServer {
 	constructor(logger, nconf) {
-		this.torPool = new TorPool(null, null, logger, nconf);
+		this.torPool = new TorPool(nconf.get('torPath'), null, nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'),logger);
 		this.logger = logger;
 		this.nconf = nconf;
 
@@ -223,30 +223,30 @@ class ControlServer {
 	}
 
 	createTorPool(options) {
-		this.torPool = new TorPool(null, options, this.logger, this.nconf);
+		this.torPool = new TorPool(nconf.get('torPath'), options, nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'), this.logger);
 		return Promise.resolve();
 	}
 
 	createSOCKSServer(port) {
-		this.socksServer = new SOCKSServer(this.torPool, this.logger, this.nconf);
+		this.socksServer = new SOCKSServer(this.torPool, this.logger);
 		this.socksServer.listen(port || 9050);
-		this.logger && this.logger.info(`[socks]: Listening on ${port}`);
+		this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
 		return Promise.resolve();
 	}
 
 	createHTTPServer(port) {
-		this.httpServer = new HTTPServer(this.torPool, this.logger, this.nconf);
+		this.httpServer = new HTTPServer(this.torPool, this.logger);
 		this.httpServer.listen(port || 9080);
-		this.logger && this.logger.info(`[http]: Listening on ${port}`);
+		this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
 		return Promise.resolve();
 	}
 
 	createDNSServer(port) {
-		this.dnsServer = new DNSServer(this.torPool, this.logger, this.nconf);
+		this.dnsServer = new DNSServer(this.torPool, nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
 		this.dnsServer.serve(port || 9053);
-		this.logger && this.logger.info(`[dns]: Listening on ${port}`);
+		this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
 		return Promise.resolve();
 	}

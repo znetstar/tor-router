@@ -6,11 +6,11 @@ const URL = require('url');
 const SocksProxyAgent = require('socks-proxy-agent');
 
 class HTTPServer extends Server {
-	constructor(tor_pool, logger, nconf) {
+	constructor(tor_pool, logger) {
 		let handle_http_connections = (req, res) => {
 			let d = domain.create();
 			d.on('error', (error) => {
-				this.logger.error(`[http-proxy]: an error occured: ${error.message}`)
+				logger.error(`[http-proxy]: an error occured: ${error.message}`)
 				res.end();
 			});
 			d.add(req);
@@ -35,7 +35,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
+				logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
 
 				d.run(() => {
 					let proxy_req = http.request({
@@ -154,7 +154,6 @@ class HTTPServer extends Server {
 		this.on('connect', handle_connect_connections);
 
 		this.logger = logger;
-		this.nconf = nconf;
 		this.tor_pool = tor_pool;
 	}
 };

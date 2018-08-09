@@ -43,17 +43,17 @@ const load_balance_methods = {
 };
 
 class TorPool extends EventEmitter {
-	constructor(tor_path, default_config, logger, nconf, data_directory, load_balance_method) {
+	constructor(tor_path, default_config, data_directory, load_balance_method, granax_options, logger) {
 		super();
 		this._instances = [];
-		default_config = _.extend({}, (default_config || {}), nconf.get('torConfig'));
+		default_config = _.extend({}, (default_config || {}));
 		this.default_tor_config = default_config;
-		this.data_directory = data_directory || nconf.get('parentDataDirectory');
-		this.load_balance_method = load_balance_method || nconf.get('loadBalanceMethod');
+		this.data_directory = data_directory;
+		this.load_balance_method = load_balance_method;
 		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
-		this.tor_path = tor_path || nconf.get('torPath');
+		this.tor_path = tor_path;
 		this.logger = logger;
-		this.nconf = nconf;
+		this.granax_options = granax_options;
 	}
 
 	get instances() { 
@@ -65,7 +65,7 @@ class TorPool extends EventEmitter {
 		instance_definition.Config = _.extend(instance_definition.Config, this.default_tor_config);
 		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
-		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.logger, this.nconf);
+		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.granax_options, this.logger);
 		instance.id = instance_id;
 		instance.definition = instance_definition;
 		instance.create((error) => {
@@ -121,7 +121,7 @@ class TorPool extends EventEmitter {
 	}
 
 	next() {
-		this._instances = load_balance_methods[this.nconf.get('loadBalanceMethod')](this._instances);
+		this._instances = load_balance_methods[this.load_balance_method](this._instances);
 		return this.instances[0];
 	}
 
@@ -154,12 +154,12 @@ class TorPool extends EventEmitter {
 	/* Begin Deprecated */
 
 	new_ips(callback) {
-		this.logger && this.logger.warn(`TorPool.new_ips is deprecated, use TorPool.new_identites`);
+		this.logger.warn(`TorPool.new_ips is deprecated, use TorPool.new_identites`);
 		return this.new_identites(callback);
 	}
 
 	new_ip_at(index, callback) {
-		this.logger && this.logger.warn(`TorPool.new_ip_at is deprecated, use TorPool.new_identity_at`);
+		this.logger.warn(`TorPool.new_ip_at is deprecated, use TorPool.new_identity_at`);
 		return this.new_identity_at(index, callback);
 	}
 
