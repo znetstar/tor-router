@@ -111,8 +111,9 @@ var logger = null;
 logger = winston.createLogger({
 	level: logLevel,
 	format: winston.format.simple(),
-	transports: (logLevel == 'null') ? [] : [ new (winston.transports.Console)({ level: logLevel }) ]
+	transports: (logLevel == 'null') ? [ new (require('winston-null-transport'))() ] : [ new (winston.transports.Console)({ level: logLevel }) ]
 });
+
 
 let instances = nconf.get('instances');
 let log_level = logLevel;
