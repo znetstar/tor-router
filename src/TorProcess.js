@@ -157,6 +157,7 @@ class TorProcess extends EventEmitter {
 							this.emit('error', err);
 						} else {
 							this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
+							this.control_port_connected = true;
 							this.emit('controller_ready');
 						}
 					});
@@ -167,18 +168,22 @@ class TorProcess extends EventEmitter {
 				let text = Buffer.from(data).toString('utf8');
 				let msg = text.split('] ').pop();
 				if (text.indexOf('Bootstrapped 100%: Done') !== -1){
+					this.bootstrapped = true;
 					this.emit('ready');
 				}
 
 				if (text.indexOf('Opening Control listener on') !== -1) {
+					this.control_port_listening = true;
 					this.emit('control_listen');
 				}
 
 				if (text.indexOf('Opening Socks listener on') !== -1) {
+					this.socks_port_listening = true;
 					this.emit('socks_listen');
 				}
 
 				if (text.indexOf('Opening DNS listener on') !== -1) {
+					this.dns_port_listening = true;
 					this.emit('dns_listen');
 				}
 
