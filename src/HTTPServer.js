@@ -1,6 +1,5 @@
 const http = require('http');
 const Server = http.Server;
-const domain = require('domain');
 const socks = require('socksv5');
 const URL = require('url');
 const SocksProxyAgent = require('socks-proxy-agent');
@@ -8,13 +7,8 @@ const SocksProxyAgent = require('socks-proxy-agent');
 class HTTPServer extends Server {
 	constructor(tor_pool, logger, nconf) {
 		let handle_http_connections = (req, res) => {
-			let d = domain.create();
-			d.on('error', (error) => {
-				this.logger.error(`[http-proxy]: an error occured: ${error.message}`)
-				res.end();
-			});
-			d.add(req);
-			d.add(res);
+			this.logger.error(`[http-proxy]: an error occured: ${error.message}`)
+			res.end();
 
 			let url = URL.parse(req.url); 
 			url.port = url.port || 80;
@@ -37,47 +31,45 @@ class HTTPServer extends Server {
 				let socks_port = tor_instance.socks_port;
 				logger && logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
 
-				d.run(() => {
-					let proxy_req = http.request({
-						method: req.method,
-						hostname: url.hostname, 
-						port: url.port,
-						path: url.path,
-						headers: req.headers,
-						agent: new SocksProxyAgent(`socks://127.0.0.1:${socks_port}`)
-					}, (proxy_res) => {
-						d.add(proxy_res);
-						proxy_res.on('data', (chunk) => {
-							res.write(chunk);
-						});
-
-						proxy_res.on('end', () => {
-							res.end();
-						});
-
-						res.writeHead(proxy_res.statusCode, proxy_res.headers);
+				let proxy_req = http.request({
+					method: req.method,
+					hostname: url.hostname, 
+					port: url.port,
+					path: url.path,
+					headers: req.headers,
+					agent: new SocksProxyAgent(`socks://127.0.0.1:${socks_port}`)
+				}, (proxy_res) => {
+					d.add(proxy_res);
+					proxy_res.on('data', (chunk) => {
+						res.write(chunk);
 					});
 
-					req.removeListener('data', onIncomingData);
+					proxy_res.on('end', () => {
+						res.end();
+					});
 
-					req.on('data', (chunk) => {
-						proxy_req.write(chunk);
-					})
-
-					req.on('end', () => {
-						proxy_req.end();
-					})
-
-					while (buffer.length) {
-						proxy_req.write(buffer.shift());
-					}
-
-					if (req.finished) 
-						proxy_req.end();
-
-					d.add(proxy_req);
+					res.writeHead(proxy_res.statusCode, proxy_res.headers);
 				});
+
+				req.removeListener('data', onIncomingData);
+
+				req.on('data', (chunk) => {
+					proxy_req.write(chunk);
+				})
+
+				req.on('end', () => {
+					proxy_req.end();
+				})
+
+				while (buffer.length) {
+					proxy_req.write(buffer.shift());
+				}
+
+				if (req.finished) 
+					proxy_req.end();
+
 			};
+
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
@@ -87,10 +79,6 @@ class HTTPServer extends Server {
 		};
 
 		let handle_connect_connections = (req, inbound_socket, head) => {
-			let d = domain.create();
-
-			d.add(inbound_socket);
-
 			let hostname = req.url.split(':').shift();
 			let port = Number(req.url.split(':').pop());
 
@@ -107,39 +95,30 @@ class HTTPServer extends Server {
 
 					if (error)
 						this.logger.error(`[http-connect]: an error occured: ${error.message}`)
-
-					d.exit();
 				};
-
-				d.on('error', onClose);
-
-				d.add(inbound_socket);
 
 				var buffer = [head];
 				let onInboundData = function (data) {
 					buffer.push(data);
 				};
 
-				d.run(() => {
-					socks.connect({
-						host: hostname,
-						port: port,
-						proxyHost: '127.0.0.1',
-						proxyPort: socks_port,
-						localDNS: false,
-						auths: [ socks.auth.None() ]
-					}, ($outbound_socket) => {
-						outbound_socket = $outbound_socket;
-						d.add(outbound_socket);
-						outbound_socket && outbound_socket.on('close', onClose);
-						outbound_socket && outbound_socket.on('error', onClose);
+				socks.connect({
+					host: hostname,
+					port: port,
+					proxyHost: '127.0.0.1',
+					proxyPort: socks_port,
+					localDNS: false,
+					auths: [ socks.auth.None() ]
+				}, ($outbound_socket) => {
+					outbound_socket = $outbound_socket;
+					outbound_socket && outbound_socket.on('close', onClose);
+					outbound_socket && outbound_socket.on('error', onClose);
 
-						inbound_socket.write('HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: tor-router\r\n' +'\r\n');
-						outbound_socket.write(head);
+					inbound_socket.write('HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: tor-router\r\n' +'\r\n');
+					outbound_socket.write(head);
 
-						outbound_socket.pipe(inbound_socket);
-						inbound_socket.pipe(outbound_socket);
-					})
+					outbound_socket.pipe(inbound_socket);
+					inbound_socket.pipe(outbound_socket);
 				});
 			};
 			if (tor_pool.instances.length) {
