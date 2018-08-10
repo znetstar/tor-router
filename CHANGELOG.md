@@ -60,7 +60,7 @@
 
 ### Added
 - Adds an HTTP Proxy Server `HTTPServer` which can HTTP-Connect requests (HTTPS traffic).
-- Adds a `queryInstances` RPC function
+- Adds a `queryInstances` RPC function as requested in [Issue #3](https://github.com/znetstar/tor-router/issues/3)
 
 ### Removed
 - Removes the "docker-compose.yml" file
