@@ -4,6 +4,8 @@
 
 Tor Router also includes a DNS proxy server and a HTTP proxy as well, which like the SOCKS proxy will distribute traffic across multiple instances of Tor in round-robin fashion. The HTTP proxy server can be used to access Tor via an HTTP Proxy.
 
+A list of changes can be [found here](https://github.com/znetstar/tor-router/blob/master/CHANGELOG.md)
+
 ## Building and Running
 
 The only installation requirement is node.js. Tor is bundled with the application. To use an external Tor executable use the `--torPath` command line switch or set the `TOR_PATH` environment variable.
@@ -36,6 +38,10 @@ The following command line switches and their environment variable equivalents a
 |-t, --torPath|TOR_PATH|Provide the path for the Tor executable that will be used| 
 
 For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
+
+## Testing
+
+Tests are written in mocha and can be found under `test/test.js` and can be run with `npm test`
 
 ## Configuration
 
@@ -148,7 +154,3 @@ let rpcRequest = {
 };
 client.write(JSON.stringify(rpcRequest));
 ```
-
-## Test
-
-Tests are written in mocha, just run `npm test`

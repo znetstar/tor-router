@@ -1,14 +1,22 @@
-## RPC Functions
+# RPC Functions
 
 The following functions are available via the RPC
 
-# queryInstances()
+## queryInstances()
 
 Returns an array containing information on the instances currently running under the router.
 
-# createInstances(Array or Integrer)
+## queryInstanceByName(String)
 
-If passed an integrer, creates thats many Tor instances. An array can also be passed describing the names, weights and configurations of prospective instances. :
+Returns information on an instance identified by name
+
+## queryInstanceAt(Integer)
+
+Returns information on an instance identified by index
+
+## createInstances(Array or Integer)
+
+If passed an Integer, creates thats many Tor instances. An array can also be passed describing the names, weights and configurations of prospective instances. :
 
 ```
 var rpcRequest = {
@@ -30,63 +38,63 @@ var rpcRequest = {
 
 Will wait until the Tor Instance has fully connected to the network before returning
 
-# addInstances(Array)
+## addInstances(Array)
 
 Serves the same purpose as "createInstances" but only takes an Array
 
-# removeInstances(Integrer)
+## removeInstances(Integer)
 
 Removes a number of instances
 
-# removeInstanceAt(Integrer)
+## removeInstanceAt(Integer)
 
 Remove a specific instance from the pool by its index
 
-# removeInstanceByName(String)
+## removeInstanceByName(String)
 
 Remove a specific instance from the pool by its name
 
-# newIdentites()
+## newIdentites()
 
 Get new identites for all instances
 
-# newIdentityAt(Integrer)
+## newIdentityAt(Integer)
 
 Get a new identity for a specific instance by its index
 
-# newIdentityByName(String)
+## newIdentityByName(String)
 
 Get a new identity for a specific instance by its name
 
-# nextInstance()
+## nextInstance()
 
 Cycle to the next instance using the load balancing method
 
-# closeInstances()
+## closeInstances()
 
 Shutdown all Tor instances
 
-# setTorConfig(Object)
+## setTorConfig(Object)
 
 Applies the configuration to all active instances
 
-# getDefaultTorConfig() 
+## getDefaultTorConfig() 
 
 Retrieve the default Tor Config for all future instances
 
-# setDefaultTorConfig(Object)
+## setDefaultTorConfig(Object)
 
 Set the default Tor Config for all future instances
 
-# getLoadBalanceMethod()
+## getLoadBalanceMethod()
 
 Get the current load balance method
 
-# setLoadBalanceMethod(String)
+## setLoadBalanceMethod(String)
 
 Set the current load balance method
 
-# getInstanceConfigAt(Integrer: index, String: keyword)
+## getInstanceConfigAt(Integer: index, String: keyword)
 
 Retrieves the current value of an option set in the configuration by the index of the instance using the control protocol. 
 
@@ -103,28 +111,28 @@ var rpcRequest = {
 };
 ```
 
-# getInstanceConfigByName(String: name, String: keyword)
+## getInstanceConfigByName(String: name, String: keyword)
 
 Works the same way as `getInstanceConfigAt` except takes an instance name instead of an index
 
-# setInstanceConfigAt(Integrer: index, String: keyword, String: value)
+## setInstanceConfigAt(Integer: index, String: keyword, String: value)
 
 Sets the value in the configuration of an instance using the control protocol. Changes will be applied immediately.
 
-# setInstanceConfigByName(Integrer: index, String: keyword, String: value)
+## setInstanceConfigByName(Integer: index, String: keyword, String: value)
 
 Works the same way as `setInstanceConfigAt` except takes an instance name instead of an index
 
-# signalAllInstances(String)
+## signalAllInstances(String)
 
 Sends a signal using the control protocol to all instances
 
 A list of all signals can be [found here](https://gitweb.torproject.org/torspec.git/tree/control-spec.txt)
 
-# signalInstanceAt(Integrer: index, String: signal)
+## signalInstanceAt(Integer: index, String: signal)
 
 Sends a signal using the control protocol to an instance identified by its index
 
-# signalInstanceByName(String: name, String: signal)
+## signalInstanceByName(String: name, String: signal)
 
 Sends a signal using the control protocol to an instance identified by its name

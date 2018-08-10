@@ -23,7 +23,7 @@ var logger = winston.createLogger({
 });
 
 const WAIT_FOR_CREATE = 120000;
-const PAGE_LOAD_TIME = 30000;
+const PAGE_LOAD_TIME = 60000;
 
 describe('TorProcess', function () {
 	var tor = new (TorRouter.TorProcess)(nconf.get('torPath'), { DataDirectory: nconf.get('parentDataDirectory'), ProtocolWarnings: 0 }, null, logger);
@@ -281,20 +281,6 @@ describe('TorPool', function () {
 	});
 
 
-	describe('#new_ips(index)', function () {
-		this.timeout(5000);
-		it('should signal to retrieve a new identity to all instances', function (done) {
-			torPool.new_ips(done);
-		});
-	});
-
-	describe('#new_ip_at(instance_name)', function () {
-		this.timeout(5000);
-		it('should signal to retrieve a new identity identified by index', function (done) {
-			torPool.new_ip_at(0, done);
-		});
-	});
-
 	describe('#set_config_all(keyword, value)', function () {
 		it('should set configuration on all active instances', function (done) {
 			this.timeout(5000);
@@ -457,7 +443,7 @@ describe('HTTPServer', function () {
 
 			req.on('response', function (res) {
 				done();
-			})
+			});
 		});
 	});
 
@@ -476,7 +462,7 @@ describe('HTTPServer', function () {
 
 			req.on('response', function (res) {
 				done();
-			})
+			});
 		});
 	});
 
@@ -649,6 +635,34 @@ describe('ControlServer - RPC', function () {
 
 		it("tor pool should now contain and instance that has the same name as the name specified in the defintion", function () {
 			assert.ok(rpcControlServer.torPool.instance_by_name('instance-1'));
+		});
+	});
+
+	describe('#queryInstanceByName(instance_name)', function () {
+		this.timeout(3000);
+		it('should return a single instance', function (done) {
+			rpcClient.invoke('queryInstanceByName', ['instance-1'], function (error, raw) {
+				if (error)
+					return done(error);
+
+				var instance = JSON.parse(raw).result;
+
+				done(null, (typeof(instance.name) !== undefined) && (instance.name !== null));
+			});
+		});
+	});
+
+	describe('#queryInstanceAt(index)', function () {
+		this.timeout(3000);
+		it('should return a single instance', function (done) {
+			rpcClient.invoke('queryInstanceAt', [0], function (error, raw) {
+				if (error)
+					return done(error);
+
+				var instance = JSON.parse(raw).result;
+
+				done(null, (typeof(instance.name) !== undefined) && (instance.name !== null));
+			});
 		});
 	});
 

@@ -17,14 +17,44 @@ class ControlServer {
 		server.expose('createDNSServer', this.createDNSServer.bind(this));
 		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
 
-		// queryInstanceAt, queryInstanceByName
+		const instance_info = (i) => {
+			return { name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight };
+		};
 
 		server.expose('queryInstances', (function () {
 			return new Promise((resolve, reject) => {
 				if (!this.torPool)
 					return reject({ message: 'No pool created' });
 
-				resolve(this.torPool.instances.map((i) => ( { name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight } )) );		
+				resolve(this.torPool.instances.map(instance_info) );		
+			});
+		}).bind(this));
+
+		server.expose('queryInstanceByName', (function (instance_name) {
+			return new Promise((resolve, reject) => {
+				if (!this.torPool)
+					return reject({ message: 'No pool created' });
+
+				let i = this.torPool.instance_by_name(instance_name);
+
+				if (!i)
+					return reject({ message: `Instance "${instance_name}"" does not exist` });
+
+				resolve(instance_info(i));		
+			});
+		}).bind(this));
+
+		server.expose('queryInstanceAt', (function (index) {
+			return new Promise((resolve, reject) => {
+				if (!this.torPool)
+					return reject({ message: 'No pool created' });
+
+				let i = this.torPool.instance_at(index);
+
+				if (!i)
+					return reject({ message: `Instance at "${i}"" does not exist` });
+
+				resolve(instance_info(this.torPool.instance_at(index)));		
 			});
 		}).bind(this));
 

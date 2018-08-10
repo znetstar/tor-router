@@ -1,5 +1,11 @@
 # Changelog
 
+## [3.4.3] - 2018-08-10
+
+### Added
+- Adds a changelog 
+- Adds `queryInstanceByName` and `queryInstanceAt` RPC methods to retrieve individual instances 
+
 ## [3.4.2] - 2018-08-09
 
 ### Added
@@ -30,7 +36,7 @@
 ## [3.3.0] - 2018-05-10
 
 ### Added
-- Adds documentation on all RPC Methods available
+- Adds documentation on all available RPC Methods
 - Allows different load-balance methods to be defined, and changed at runtime and via RPC
 - Each instance can have started with a specific configuration (torrc) by setting the `Config` property in the definition
 
