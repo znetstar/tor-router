@@ -11,7 +11,7 @@
   },
   "scripts": {
     "start": "bin/tor-router -s -d -j 1",
-    "test": "mocha test/test.js",
+    "test": "mocha --exit test/test.js",
     "debug": "node --inspect-brk bin/tor-router"
   },
   "devDependencies": {

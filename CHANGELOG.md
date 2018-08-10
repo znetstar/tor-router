@@ -22,8 +22,27 @@
 ### Added
 - Bundles the Tor executable with the application. Tor will be downloaded during "npm install"
 - Signals and Configuration changes can be sent to live Tor instances via the Tor Control Protocol
-- Adds TorProcess.new_identity
 
 ### Changed
 - By default Tor Router will use the Tor executable bundled with the application, to override use the "TOR_PATH" environment variable
 - Deprecates the TorPool.new_ips and TorProcess.new_ip functions use TorPool.new_identites and TorProcess.new_identity function respectively.
+
+## [3.3.0] - 2018-05-10
+
+### Added
+- Adds documentation on all RPC Methods available
+- Allows different load-balance methods to be defined, and changed at runtime and via RPC
+- Each instance can have started with a specific configuration (torrc) by setting the "Config" property in the definition
+
+### Changed
+- If the "Name" property in the definition was not set the data directory will be deleted when the Tor Process exits
+- Switches from "commander" to "nconf"/"yargs" for command line processing, switches however will remain the same
+
+## [3.2.2] - 2018-05-08
+
+### Added
+- Fixes
+
+### Changed
+- Tor Router and child Tor processes are run as an unprivilieged user in the Docker container
+- Fixes [Issue #4](https://github.com/znetstar/tor-router/issues/4)
