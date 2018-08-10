@@ -160,7 +160,7 @@ describe('TorPool', function () {
 				let def_clone = _.extend({}, i.definition);
 				delete def_clone.Config.DataDirectory;
 				return def_clone;
-			}));
+			}).sort(function(a,b) {return (a.Name > b.Name) ? 1 : ((b.Name > a.Name) ? -1 : 0);});
 		});
 
 		it('the created instances should have the same config properties specified in the definiton', function (done) {
