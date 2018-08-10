@@ -66,13 +66,17 @@ Cycle to the next instance using the load balancing method
 
 Shutdown all Tor instances
 
-# getTorConfig() 
-
-Retrieve the default Tor Config
-
 # setTorConfig(Object)
 
-Set the default Tor Config
+Applies the configuration to all active instances
+
+# getDefaultTorConfig() 
+
+Retrieve the default Tor Config for all future instances
+
+# setDefaultTorConfig(Object)
+
+Set the default Tor Config for all future instances
 
 # getLoadBalanceMethod()
 

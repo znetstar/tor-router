@@ -7,7 +7,7 @@ class DNSServer extends UDPServer {
 		this.logger = logger;
 		this.tor_pool = tor_pool;
 
-		this.on('request', (req, res) => {
+		var handle_dns_request = (req, res) => {
 			let connect = (tor_instance) => {
 				for (let question of req.question) {
 					let dns_port = (tor_instance.dns_port);
@@ -45,7 +45,8 @@ class DNSServer extends UDPServer {
 				this.logger.debug(`[dns]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				this.tor_pool.once('instance_created', connect);
 			}
-		});
+		};
+		this.on('request', handle_dns_request);
 	}
 };
 

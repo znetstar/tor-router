@@ -117,7 +117,8 @@ class TorProcess extends EventEmitter {
 				});
 			}]
 		}, (error, context) => {
-			if (error) callback(error);
+			if (error) 
+				return callback && callback(error);
 
 			this._dns_port = context.dnsPort;
 			this._socks_port = context.socksPort;
@@ -132,7 +133,7 @@ class TorProcess extends EventEmitter {
 			tor.on('close', (code) => {
 				this.emit('process_exit', code);
 				if (this.definition && !this.definition.Name) {
-					del.sync(this.tor_config.DataDirectory);
+					del.sync(this.tor_config.DataDirectory, { force: true });
 				}
 			});
 

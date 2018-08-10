@@ -3,6 +3,7 @@ const SOCKSServer = require('./SOCKSServer');
 const DNSServer = require('./DNSServer');
 const HTTPServer = require('./HTTPServer');
 const rpc = require('jrpc2');
+const async = require('async');
 
 class ControlServer {
 	constructor(logger, nconf) {
@@ -16,12 +17,14 @@ class ControlServer {
 		server.expose('createDNSServer', this.createDNSServer.bind(this));
 		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
 
+		// queryInstanceAt, queryInstanceByName
+
 		server.expose('queryInstances', (function () {
 			return new Promise((resolve, reject) => {
 				if (!this.torPool)
 					return reject({ message: 'No pool created' });
 
-				resolve(this.torPool.instances.map((i) => ( { dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight } )) );		
+				resolve(this.torPool.instances.map((i) => ( { name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight } )) );		
 			});
 		}).bind(this));
 
@@ -129,21 +132,34 @@ class ControlServer {
 			return Promise.resolve();
 		}).bind(this) );
 
-		server.expose('setTorConfig', (function (config) {
+		server.expose('getDefaultTorConfig', (function () {
+			return Promise.resolve(this.nconf.get('torConfig'));
+		}).bind(this));
+
+		server.expose('setDefaultTorConfig', (function (config) {
 			this.nconf.set('torConfig', config);
 			return Promise.resolve();
 		}).bind(this));
 
-		server.expose('getTorConfig', (function () {
-			return Promise.resolve(this.nconf.get('torConfig'));
+		server.expose('setTorConfig', (function (config) {
+			return new Promise((resolve, reject) => {
+				async.each(Object.keys(config), function (key, next) {
+					var value = config[key];
+
+					this.torPool.set_config_all(key, value, next);
+				}, function (error){
+					if (error) reject(error);
+					resolve();
+				});
+			});
 		}).bind(this));
 
 		server.expose('getLoadBalanceMethod', (function () {
-			return Promise.resolve(this.nconf.get('loadBalanceMethod'));
+			return Promise.resolve(this.torPool.load_balance_method);
 		}).bind(this));	
 
 		server.expose('setLoadBalanceMethod', (function (loadBalanceMethod) {
-			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
+			this.torPool.load_balance_method = loadBalanceMethod;
 			return Promise.resolve();
 		}).bind(this));	
 
@@ -215,7 +231,7 @@ class ControlServer {
 	listen(port, callback) {  
 		this.tcpTransport = new rpc.tcpTransport({ port });
 		this.tcpTransport.listen(this.server);
-		callback();
+		callback && callback();
 	}
 
 	close() { 
@@ -223,32 +239,32 @@ class ControlServer {
 	}
 
 	createTorPool(options) {
-		this.torPool = new TorPool(nconf.get('torPath'), options, nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'), this.logger);
-		return Promise.resolve();
+		this.torPool = new TorPool(this.nconf.get('torPath'), options, this.nconf.get('parentDataDirectory'), this.nconf.get('loadBalanceMethod'), this.nconf.get('granaxOptions'), this.logger);
+		return this.torPool;
 	}
 
-	createSOCKSServer(port) {
+	createSOCKSServer(port, callback) {
 		this.socksServer = new SOCKSServer(this.torPool, this.logger);
 		this.socksServer.listen(port || 9050);
 		this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
-		return Promise.resolve();
+		callback && callback();
 	}
 
-	createHTTPServer(port) {
+	createHTTPServer(port, callback) {
 		this.httpServer = new HTTPServer(this.torPool, this.logger);
 		this.httpServer.listen(port || 9080);
 		this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
-		return Promise.resolve();
+		callback && callback();
 	}
 
-	createDNSServer(port) {
-		this.dnsServer = new DNSServer(this.torPool, nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
+	createDNSServer(port, callback) {
+		this.dnsServer = new DNSServer(this.torPool, this.nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
 		this.dnsServer.serve(port || 9053);
 		this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
-		return Promise.resolve();
+		callback && callback();
 	}
 };
 

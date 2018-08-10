@@ -37,8 +37,10 @@ const load_balance_methods = {
 					return [ instance.id, instance.definition.Weight, instance ]
 				})
 			);
-		}
-		return instances._weighted_list.peek(instances.length).map((element) => element.data);
+		};
+		let i = instances._weighted_list.peek(instances.length).map((element) => element.data);
+		i._weighted_list = instances._weighted_list;
+		return i;
 	}
 };
 
@@ -57,12 +59,13 @@ class TorPool extends EventEmitter {
 	}
 
 	get instances() { 
-		return this._instances.filter((tor) => tor.ready).slice(0);
+		return this._instances.slice(0).filter((tor) => tor.ready);
 	}
 
 	create_instance(instance_definition, callback) {
-		instance_definition.Config = instance_definition.Config || {};
-		instance_definition.Config = _.extend(instance_definition.Config, this.default_tor_config);
+		this._instances._weighted_list = void(0);
+		if (!instance_definition.Config)
+			instance_definition.Config = _.extend({}, this.default_tor_config);
 		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
 		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.granax_options, this.logger);
@@ -101,7 +104,12 @@ class TorPool extends EventEmitter {
 		return this.instances.filter((i) => i.definition.Name === name)[0];
 	}
 
+	instance_at(index) {
+		return this.instances[index];
+	}
+
 	remove(instances, callback) {
+		this._instances._weighted_list = void(0);
 		let instances_to_remove = this._instances.splice(0, instances);
 		async.each(instances_to_remove, (instance, next) => {
 			instance.exit(next);
@@ -109,14 +117,18 @@ class TorPool extends EventEmitter {
 	}
 
 	remove_at(instance_index, callback) {
-		let instance = this._instances.splice(instance_index, 1);
-		instance.exit(callback);
+		this._instances._weighted_list = void(0);
+
+		let instance = this._instances.splice(instance_index, 1)[0];
+		instance.exit((error) => {
+			callback(error);
+		});
 	}
 
 	remove_by_name(instance_name, callback) {
 		let instance = this.instance_by_name(instance_name);
 		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
-		let instance_index = (this.instances.indexOf(instance));;
+		let instance_index = (this.instances.indexOf(instance));
 		return this.remove_at(instance_index, callback);
 	}
 
@@ -126,7 +138,8 @@ class TorPool extends EventEmitter {
 	}
 
 	exit(callback) {
-		async.each(this.instances, (instance,next) => {
+		async.until(() => { return this._instances.length === 0; }, (next) => {
+			var instance = this._instances.shift();
 			instance.exit(next);
 		}, (error) => {
 			callback && callback(error);
@@ -189,9 +202,22 @@ class TorPool extends EventEmitter {
 		instance.set_config(keyword, value, callback);
 	}
 
+	set_config_all(keyword, value, callback) {
+		var i = 0;
+		async.until(() => { return i === this.instances.length; },  (next) => {
+			let instance = this.instances[i++];
+
+			instance.set_config(keyword, value, (error) => {
+				next(error);
+			});
+		}, (error) => {
+			callback(error);
+		});
+	}
+
 	signal_all(signal, callback) {
 		async.each(this.instances, (instance, next) => {
-			instance.signal(signal, callback);
+			instance.signal(signal, next);
 		}, callback);
 	}
 
