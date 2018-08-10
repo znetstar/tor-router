@@ -156,7 +156,11 @@ describe('TorPool', function () {
 		});
 
 		it('the created instances should have the same defintion properties as the input definitions', function () {
-			assert.deepEqual(instance_defintions, torPool.instances.map((i) => i.definition));
+			assert.deepEqual(instance_defintions, torPool.instances.map((i) => { 
+				let def_clone = _.extend({}, i.definition);
+				delete def_clone.Config.DataDirectory;
+				return def_clone;
+			}));
 		});
 
 		it('the created instances should have the same config properties specified in the definiton', function (done) {
