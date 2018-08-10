@@ -1,14 +1,10 @@
 const socks = require('socksv5');
 const SOCKS5Server = socks.Server;
-const domain = require('domain');
 
 class SOCKSServer extends SOCKS5Server{
 	constructor(tor_pool, logger) {
 		let handleConnection = (info, accept, deny) => {
-			let d = domain.create();
-
 			let inbound_socket = accept(true);
-			d.add(inbound_socket);
 			var outbound_socket;
 			let buffer = [];
 
@@ -22,8 +18,6 @@ class SOCKSServer extends SOCKS5Server{
 
 				if (error)
 					this.logger.error(`[socks]: an error occured: ${error.message}`)
-
-				d.exit();
 			};
 
 			if (!inbound_socket) return;
@@ -36,36 +30,31 @@ class SOCKSServer extends SOCKS5Server{
 				let socks_port = tor_instance.socks_port;
 				logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
 
-				d.on('error', onClose);
+				socks.connect({
+					host: info.dstAddr,
+					port: info.dstPort,
+					proxyHost: '127.0.0.1',
+					proxyPort: socks_port,
+					localDNS: false,
+					auths: [ socks.auth.None() ]
+				}, ($outbound_socket) => {
+					outbound_socket = $outbound_socket;
+					outbound_socket && outbound_socket.on('close', onClose);
 
-				d.run(() => {
-					socks.connect({
-						host: info.dstAddr,
-						port: info.dstPort,
-						proxyHost: '127.0.0.1',
-						proxyPort: socks_port,
-						localDNS: false,
-						auths: [ socks.auth.None() ]
-					}, ($outbound_socket) => {
-						outbound_socket = $outbound_socket;
-						d.add(outbound_socket);
-						outbound_socket && outbound_socket.on('close', onClose);
+					inbound_socket && inbound_socket.removeListener('data', onInboundData);
+					inbound_socket &&  inbound_socket.on('data', (data) => {
+						outbound_socket && outbound_socket.write(data);
+					});
 
-						inbound_socket && inbound_socket.removeListener('data', onInboundData);
-						inbound_socket &&  inbound_socket.on('data', (data) => {
-							outbound_socket && outbound_socket.write(data);
-						});
+					outbound_socket && outbound_socket.on('data', (data) => {
+						inbound_socket && inbound_socket.write(data);
+					});
 
-						outbound_socket && outbound_socket.on('data', (data) => {
-							inbound_socket && inbound_socket.write(data);
-						});
+					outbound_socket && outbound_socket.on('error', onClose);
 
-						outbound_socket && outbound_socket.on('error', onClose);
-
-						while (buffer && buffer.length && outbound_socket) {
-							outbound_socket.write(buffer.shift());
-						}
-					})
+					while (buffer && buffer.length && outbound_socket) {
+						outbound_socket.write(buffer.shift());
+					}
 				});
 			};
 			if (tor_pool.instances.length) {
