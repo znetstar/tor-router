@@ -38,7 +38,6 @@ class HTTPServer extends Server {
 					headers: req.headers,
 					agent: new SocksProxyAgent(`socks://127.0.0.1:${socks_port}`)
 				}, (proxy_res) => {
-					d.add(proxy_res);
 					proxy_res.on('data', (chunk) => {
 						res.write(chunk);
 					});
