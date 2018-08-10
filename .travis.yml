@@ -1,0 +1,11 @@
+language: node_js
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -qq tor
+
+install:
+  - npm install
+
+script: 
+  - TOR_PATH=/usr/bin/tor npm test
