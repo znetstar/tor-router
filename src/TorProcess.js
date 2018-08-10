@@ -10,6 +10,7 @@ const { TorController } = require('granax');
 const { connect } = require('net');
 const shell = require('shelljs');
 const crypto = require('crypto');
+const os = require('os');
 temp.track();
 
 class TorProcess extends EventEmitter {
@@ -103,10 +104,10 @@ class TorProcess extends EventEmitter {
 					DNSPort: `127.0.0.1:${context.dnsPort}`,
 					SocksPort: `127.0.0.1:${context.socksPort}`,
 					ControlPort: `127.0.0.1:${context.controlPort}`,
-					HashedControlPassword: shell.exec(`${this.tor_path} --hash-password "${this.control_password}"`, { async: false, silent: true }).stdout.trim()
+					HashedControlPassword: shell.exec(`${this.tor_path} --quiet --hash-password "${this.control_password}"`, { async: false, silent: true }).stdout.trim()
 				};
 				let config = _.extend(_.extend({}, this.tor_config), options);
-				let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join("\n");
+				let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join(os.EOL);
 				
 				temp.open('tor-router', (err, info) => {
 					if (err) return callback(err);
