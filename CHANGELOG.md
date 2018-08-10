@@ -4,7 +4,10 @@
 
 ### Added
 - Adds a changelog 
-- Adds `queryInstanceByName` and `queryInstanceAt` RPC methods to retrieve individual instances 
+- Adds `queryInstanceByName` and `queryInstanceAt` RPC methods to retrieve individual instances
+
+### Changes
+- Makes changes to ensure compatibility on Windows  
 
 ## [3.4.2] - 2018-08-09
 
