@@ -3,7 +3,7 @@ steps:
   args: [ 'build', '-t', 'gcr.io/znetstar-net/tor-router', '.' ]
 - name: 'gcr.io/znetstar-net/tor-router'
   entrypoint: '/app/node_modules/.bin/mocha'
-  args: [ '/app/test/test.js' ]
+  args: [ '--exit', '/app/test/test.js' ]
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'push', 'gcr.io/znetstar-net/tor-router' ]
 images: ['gcr.io/znetstar-net/tor-router']
