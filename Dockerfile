@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM node:8-jessie
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ ENV TOR_PATH /usr/bin/tor
 
 ENV PATH $PATH:/app/bin 
 
-RUN apt-get update && apt-get install -y nodejs tor git
+RUN apt-get update && apt-get install -y tor
 
 RUN useradd -ms /bin/bash tor_router
 
