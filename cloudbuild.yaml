@@ -2,6 +2,7 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'build', '-t', 'gcr.io/znetstar-net/tor-router', '.' ]
 - name: 'gcr.io/znetstar-net/tor-router'
+  entrypoint: ""
   args: [ 'npm', 'test' ]
 - name: 'gcr.io/cloud-builders/docker'
   args: [ 'push', 'gcr.io/znetstar-net/tor-router' ]
