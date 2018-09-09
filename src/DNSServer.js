@@ -1,13 +1,13 @@
 const dns = require('native-dns');
-const UDPServer = require('native-dns').UDPServer;
+const { UDPServer } = require('native-dns');
 
 class DNSServer extends UDPServer {
 	constructor(tor_pool, dns_options, dns_timeout, logger) {
 		super(dns_options);
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');
 		this.tor_pool = tor_pool;
 
-		var handle_dns_request = (req, res) => {
+		const handle_dns_request = (req, res) => {
 			let connect = (tor_instance) => {
 				for (let question of req.question) {
 					let dns_port = (tor_instance.dns_port);
@@ -27,7 +27,7 @@ class DNSServer extends UDPServer {
 					});	
 
 					outbound_req.on('error', (err) => {
-
+						this.logger.error(`[dns]: an error occured while handling ar request: ${err.message}`);
 					});
 
 

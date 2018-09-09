@@ -1,7 +1,7 @@
 const socks = require('socksv5');
-const SOCKS5Server = socks.Server;
+const { Server } = socks;
 
-class SOCKSServer extends SOCKS5Server{
+class SOCKSServer extends Server{
 	constructor(tor_pool, logger) {
 		let handleConnection = (info, accept, deny) => {
 			let inbound_socket = accept(true);
@@ -67,7 +67,7 @@ class SOCKSServer extends SOCKS5Server{
 
 		super(handleConnection);
 
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');;
 
 		this.useAuth(socks.auth.None());
 	}

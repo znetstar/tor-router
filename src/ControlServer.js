@@ -3,12 +3,11 @@ const SOCKSServer = require('./SOCKSServer');
 const DNSServer = require('./DNSServer');
 const HTTPServer = require('./HTTPServer');
 const rpc = require('jrpc2');
-const async = require('async');
 
 class ControlServer {
 	constructor(logger, nconf) {
 		this.torPool = new TorPool(nconf.get('torPath'), null, nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'),logger);
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');
 		this.nconf = nconf;
 
 		let server = this.server = new rpc.Server();
@@ -21,247 +20,99 @@ class ControlServer {
 			return { name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight };
 		};
 
-		server.expose('queryInstances', (function () {
-			return new Promise((resolve, reject) => {
-				if (!this.torPool)
-					return reject({ message: 'No pool created' });
-
-				resolve(this.torPool.instances.map(instance_info) );		
-			});
+		server.expose('queryInstances', (async () => {
+			if (!this.torPool)
+				throw new Error('No instances created');
+			
+			this.torPool.instances.map(instance_info);
 		}).bind(this));
 
-		server.expose('queryInstanceByName', (function (instance_name) {
-			return new Promise((resolve, reject) => {
-				if (!this.torPool)
-					return reject({ message: 'No pool created' });
+		server.expose('queryInstanceByName', (async (instance_name) => {
+			if (!this.torPool)
+				throw new Error('No pool created');
 
-				let i = this.torPool.instance_by_name(instance_name);
+			let instance = this.torPool.instance_by_name(instance_name);
 
-				if (!i)
-					return reject({ message: `Instance "${instance_name}"" does not exist` });
+			if (!instance)
+				throw new Error(`Instance "${instance_name}"" does not exist`);
 
-				resolve(instance_info(i));		
-			});
+			return instance_info(i)	
 		}).bind(this));
 
-		server.expose('queryInstanceAt', (function (index) {
-			return new Promise((resolve, reject) => {
-				if (!this.torPool)
-					return reject({ message: 'No pool created' });
+		server.expose('queryInstanceAt', (async (index) => {
+			if (!this.torPool)
+				throw new Error('No pool created');
 
-				let i = this.torPool.instance_at(index);
+			let instance = this.torPool.instance_at(index);
 
-				if (!i)
-					return reject({ message: `Instance at "${i}"" does not exist` });
+			if (!instance)
+				throw new Error(`Instance at "${i}"" does not exist`);
 
-				resolve(instance_info(this.torPool.instance_at(index)));		
-			});
+			return instance_info(this.torPool.instance_at(index));	
 		}).bind(this));
 
-		server.expose('createInstances', (function (instances) {
-			return new Promise((resolve, reject) => {
-				this.torPool.create(instances, (error, instances) => {
-					if (error) reject(error);
-					else resolve();
-				}); 
-			});
-		}).bind(this) );
+		server.expose('createInstances', this.torPool.create.bind(this.torPool));
+		
+		server.expose('addInstances', this.torPool.add.bind(this.torPool));
 
-		server.expose('addInstances', (function (instances) {
-			return new Promise((resolve, reject) => {
-				this.torPool.add(instances, (error, instances) => {
-					if (error) reject(error);
-					else resolve();
-				}); 
-			});
-		}).bind(this) );
+		server.expose('removeInstances', this.torPool.remove.bind(this.torPool));
 
-		server.expose('removeInstances', (function (instances) {
-			return new Promise((resolve, reject) => {
-				this.torPool.remove(instances, (error) => {
-					if (error) reject(error);
-					else resolve();
-				}); 
-			});
-		}).bind(this) );
+		server.expose('removeInstanceAt', this.torPool.remove_at.bind(this.torPool));
 
-		server.expose('removeInstanceAt', (function (instance_index) {
-			return new Promise((resolve, reject) => {
-				this.torPool.remove_at(instance_index, (error) => {
-					if (error) reject(error);
-					else resolve();
-				}); 
-			});
-		}).bind(this) );
+		server.expose('removeInstanceByName', this.torPool.remove_by_name.bind(this.torPool));
 
-		server.expose('removeInstanceByName', (function (instance_name) {
-			return new Promise((resolve, reject) => {
-				this.torPool.remove_by_name(instance_name, (error) => {
-					if (error) reject(error);
-					else resolve();
-				}); 
-			});
-		}).bind(this) );
+		server.expose('newIdentites', this.torPool.new_identites.bind(this.torPool));
 
-		server.expose('newIdentites', (function() {
-			return new Promise((resolve, reject) => {
-				this.torPool.new_identites((error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
+		server.expose('newIdentityAt', this.torPool.new_identity_at.bind(this.torPool));
+
+		server.expose('newIdentityByName', this.torPool.new_identity_by_name.bind(this.torPool));
+
+		server.expose('nextInstance', (async () => this.torPool.next()).bind(this));
+
+		server.expose('closeInstances', (async () => this.torPool.exit()).bind(this));
+		
+		server.expose('getDefaultTorConfig', (async () => {
+			return this.nconf.get('torConfig');
 		}).bind(this));
 
-		server.expose('newIdentityAt', (function(index) {
-			return new Promise((resolve, reject) => {
-				this.torPool.new_identity_at(index, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
-
-		server.expose('newIdentityByName', (function(name) {
-			return new Promise((resolve, reject) => {
-				this.torPool.new_identity_by_name(name, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
-
-		/* Begin Deprecated */
-
-		server.expose('newIps', (function() {
-			return new Promise((resolve, reject) => {
-				this.torPool.new_ips((error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
-
-		server.expose('newIpAt', (function(index) {
-			return new Promise((resolve, reject) => {
-				this.torPool.new_ip_at(index, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
-
-		/* End Deprecated */
-
-		server.expose('nextInstance', (function () {
-			this.torPool.next();
-			return Promise.resolve();
-		}).bind(this) );
-
-		server.expose('closeInstances', (function ()  {
-			this.torPool.exit();
-			return Promise.resolve();
-		}).bind(this) );
-
-		server.expose('getDefaultTorConfig', (function () {
-			return Promise.resolve(this.nconf.get('torConfig'));
-		}).bind(this));
-
-		server.expose('setDefaultTorConfig', (function (config) {
+		server.expose('setDefaultTorConfig', (async (config) => {
 			this.nconf.set('torConfig', config);
-			return Promise.resolve();
 		}).bind(this));
 
-		server.expose('setTorConfig', (function (config) {
-			return new Promise((resolve, reject) => {
-				async.each(Object.keys(config), function (key, next) {
-					var value = config[key];
+		server.expose('setTorConfig', (async (config) => {
+			await Promise.all(Object.keys(config).map((key) => {
+				var value = config[key];
 
-					this.torPool.set_config_all(key, value, next);
-				}, function (error){
-					if (error) reject(error);
-					resolve();
-				});
-			});
+				return this.torPool.set_config_all(key, value);
+			}));
 		}).bind(this));
 
-		server.expose('getLoadBalanceMethod', (function () {
-			return Promise.resolve(this.torPool.load_balance_method);
+		server.expose('getLoadBalanceMethod', (async () => {
+			return this.torPool.load_balance_method;
 		}).bind(this));	
 
-		server.expose('setLoadBalanceMethod', (function (loadBalanceMethod) {
+		server.expose('setLoadBalanceMethod', (async (loadBalanceMethod) => {
 			this.torPool.load_balance_method = loadBalanceMethod;
-			return Promise.resolve();
 		}).bind(this));	
 
-		server.expose('getInstanceConfigByName', (function (name, keyword) {
-			return new Promise((resolve, reject) => {
-				this.torPool.get_config_by_name(name, keyword, (error, value) => {
-					if (error) reject(error);
-					else resolve(value);
-				});
-			});
-		}).bind(this));	
+		server.expose('getInstanceConfigByName', this.torPool.get_config_by_name.bind(this.torPool));	
 
-		server.expose('getInstanceConfigAt', (function (index, keyword) {
-			return new Promise((resolve, reject) => {
-				this.torPool.get_config_at(index, keyword, (error, value) => {
-					if (error) reject(error);
-					else resolve(value);
-				});
-			});
-		}).bind(this));	
+		server.expose('getInstanceConfigAt', this.torPool.get_config_at.bind(this.torPool));	
 
-		server.expose('setInstanceConfigByName', (function (name, keyword, value) {
-			return new Promise((resolve, reject) => {
-				this.torPool.set_config_by_name(name, keyword, value, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
+		server.expose('setInstanceConfigByName', this.torPool.set_config_by_name.bind(this.torPool));
 
-		server.expose('setInstanceConfigAt', (function (index, keyword, value) {
-			return new Promise((resolve, reject) => {
-				this.torPool.set_config_at(index, keyword, value, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
+		server.expose('setInstanceConfigAt', this.torPool.set_config_at.bind(this.torPool));
 
+		server.expose('signalAllInstances', this.torPool.signal_all.bind(this.torPool));
 
-		server.expose('signalAllInstances', (function (signal) {
-			return new Promise((resolve, reject) => {
-				this.torPool.signal_all(signal, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
+		server.expose('signalInstanceAt', this.torPool.signal_at.bind(this.torPool));
 
-		server.expose('signalInstanceAt', (function (index, signal, callback) {
-			return new Promise((resolve, reject) => {
-				this.torPool.signal_at(index, signal, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
-
-		server.expose('signalInstanceByName', (function (name, signal, callback) {
-			return new Promise((resolve, reject) => {
-				this.torPool.signal_by_name(name, signal, (error) => {
-					if (error) reject(error);
-					else resolve();
-				});
-			});
-		}).bind(this));
+		server.expose('signalInstanceByName', this.torPool.signal_by_name.bind(this.torPool));
 	}
 
-	listen(port, callback) {  
+	listen(port) {  
 		this.tcpTransport = new rpc.tcpTransport({ port });
 		this.tcpTransport.listen(this.server);
-		callback && callback();
 	}
 
 	close() { 
@@ -273,28 +124,25 @@ class ControlServer {
 		return this.torPool;
 	}
 
-	createSOCKSServer(port, callback) {
+	createSOCKSServer(port) {
 		this.socksServer = new SOCKSServer(this.torPool, this.logger);
 		this.socksServer.listen(port || 9050);
 		this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
-		callback && callback();
 	}
 
-	createHTTPServer(port, callback) {
+	createHTTPServer(port) {
 		this.httpServer = new HTTPServer(this.torPool, this.logger);
 		this.httpServer.listen(port || 9080);
 		this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
-		callback && callback();
 	}
 
-	createDNSServer(port, callback) {
+	createDNSServer(port) {
 		this.dnsServer = new DNSServer(this.torPool, this.nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
 		this.dnsServer.serve(port || 9053);
 		this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
-		callback && callback();
 	}
 };
 

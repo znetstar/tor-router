@@ -101,19 +101,20 @@ class TorProcess extends EventEmitter {
 		let controlPort = this._control_port = await getPort();
 
 		let options = {
-			DNSPort: `127.0.0.1:${context.dnsPort}`,
-			SocksPort: `127.0.0.1:${context.socksPort}`,
-			ControlPort: `127.0.0.1:${context.controlPort}`,
+			DNSPort: `127.0.0.1:${dnsPort}`,
+			SocksPort: `127.0.0.1:${socksPort}`,
+			ControlPort: `127.0.0.1:${controlPort}`,
 			HashedControlPassword: shell.exec(`${this.tor_path} --quiet --hash-password "${this.control_password}"`, { async: false, silent: true }).stdout.trim()
 		};
 
 		let config = _.extend(_.extend({}, this.tor_config), options);
 		let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join(os.EOL);
 
-		let configFilePath = await temp.openAsync('tor-router').path;
-		fs.writeFileAsync(configFilePath, text);
+		let configFile = await temp.openAsync('tor-router');
+		let configPath = configFile.path;
+		fs.writeFileAsync(configPath, text);
 
-		let tor = spawn(this.tor_path, ['-f', context.configPath], {
+		let tor = spawn(this.tor_path, ['-f', configPath], {
 			stdio: ['ignore', 'pipe', 'pipe'],
 			detached: false
 		});
@@ -121,7 +122,7 @@ class TorProcess extends EventEmitter {
 		tor.on('close', (code) => {
 			this.emit('process_exit', code);
 			if (this.definition && !this.definition.Name) {
-				del.sync(this.tor_config.DataDirectory, { force: true });
+				del(this.tor_config.DataDirectory, { force: true });
 			}
 		});
 
@@ -139,7 +140,7 @@ class TorProcess extends EventEmitter {
 		this.on('control_listen', () => {
 			this._controller = new TorController(connect(this._control_port), _.extend({ authOnConnect: false }, this.granax_options));
 			Promise.promisifyAll(this._controller);
-			
+
 			this.controller.on('ready', () => {
 				this.logger.debug(`[tor-${this.instance_name}]: connected to tor control port`);
 				this.controller.authenticate(`"${this.control_password}"`, (err) => {

@@ -1,8 +1,11 @@
 const http = require('http');
-const Server = http.Server;
-const socks = require('socksv5');
 const URL = require('url');
+const { Server } = http;
+
+const socks = require('socksv5');
 const SocksProxyAgent = require('socks-proxy-agent');
+
+const TOR_ROUTER_PROXY_AGENT = 'tor-router';
 
 class HTTPServer extends Server {
 	constructor(tor_pool, logger) {
@@ -10,7 +13,7 @@ class HTTPServer extends Server {
 			let url = URL.parse(req.url); 
 			url.port = url.port || 80;
 
-			var buffer = [];
+			let buffer = [];
 
 			function onIncomingData(chunk) {
 				buffer.push(chunk);
@@ -23,7 +26,7 @@ class HTTPServer extends Server {
 			req.on('data', onIncomingData);
 			req.on('end', preConnectClosed);
 			req.on('error', function (err) {
-				logger.error("[http-proxy]: an error occured\n"+err.stack);
+				logger.error("[http-proxy]: an error occured: "+err.message);
 			});
 
 			let connect = (tor_instance) => {
@@ -112,7 +115,7 @@ class HTTPServer extends Server {
 					outbound_socket && outbound_socket.on('close', onClose);
 					outbound_socket && outbound_socket.on('error', onClose);
 
-					inbound_socket.write('HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: tor-router\r\n' +'\r\n');
+					inbound_socket.write(`HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: ${TOR_ROUTER_PROXY_AGENT}\r\n` +'\r\n');
 					outbound_socket.write(head);
 
 					outbound_socket.pipe(inbound_socket);
@@ -130,7 +133,7 @@ class HTTPServer extends Server {
 		super(handle_http_connections);
 		this.on('connect', handle_connect_connections);
 
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');
 		this.tor_pool = tor_pool;
 	}
 };
