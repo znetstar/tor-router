@@ -17,7 +17,7 @@ Array.prototype.rotate = (function() {
     };
 })();
 
-const EventEmitter = require('eventemitter2').EventEmitter2;
+const { EventEmitter } = require('eventemitter3');
 const async = require('async');
 const TorProcess = require('./TorProcess');
 const _ = require('lodash');
