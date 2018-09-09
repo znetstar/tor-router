@@ -11,17 +11,12 @@ const del = require('del');
 const rpc = require('jrpc2');
 const fs = require('fs');
 
-var colors = require('mocha/lib/reporters/base').colors;
-var nconf = require('nconf');
+const colors = require('mocha/lib/reporters/base').colors;
+const nconf = require('nconf');
 nconf = require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
-var logger = winston.createLogger({
-	level: 'info',
-	format: winston.format.simple(),
-	silent: true,
-	transports: [ new (winston.transports.Console)({ silent: true }) ]
-});
+const logger = require('../src/winston-silent-logger');
 
 const WAIT_FOR_CREATE = 120000;
 const PAGE_LOAD_TIME = 60000;

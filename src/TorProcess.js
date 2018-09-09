@@ -16,7 +16,7 @@ temp.track();
 class TorProcess extends EventEmitter {
 	constructor(tor_path, config, granax_options, logger) {
 		super();
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');
 		this.tor_path = tor_path;
 		this.granax_options = granax_options;
 		this.control_password = crypto.randomBytes(128).toString('base64');

@@ -26,24 +26,6 @@ const nanoid = require('nanoid');
 const fs = require('fs');
 const WeightedList = require('js-weighted-list');
 
-const load_balance_methods = {
-	round_robin: function (instances) {
-		return instances.rotate(1);
-	},
-	weighted: function (instances) {
-		if (!instances._weighted_list) {
-			instances._weighted_list = new WeightedList(
-				instances.map((instance) => {
-					return [ instance.id, instance.definition.Weight, instance ]
-				})
-			);
-		};
-		let i = instances._weighted_list.peek(instances.length).map((element) => element.data);
-		i._weighted_list = instances._weighted_list;
-		return i;
-	}
-};
-
 class TorPool extends EventEmitter {
 	constructor(tor_path, default_config, data_directory, load_balance_method, granax_options, logger) {
 		super();
@@ -54,42 +36,65 @@ class TorPool extends EventEmitter {
 		this.load_balance_method = load_balance_method;
 		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
 		this.tor_path = tor_path;
-		this.logger = logger;
+		this.logger = logger || require('./winston-silent-logger');
 		this.granax_options = granax_options;
+	}
+
+	static get load_balance_methods() {
+		return {
+			round_robin: function (instances) {
+				return instances.rotate(1);
+			},
+			weighted: function (instances) {
+				if (!instances._weighted_list) {
+					instances._weighted_list = new WeightedList(
+						instances.map((instance) => {
+							return [ instance.id, instance.definition.Weight, instance ]
+						})
+					);
+				};
+				let i = instances._weighted_list.peek(instances.length).map((element) => element.data);
+				i._weighted_list = instances._weighted_list;
+				return i;
+			}
+		};
 	}
 
 	get instances() { 
 		return this._instances.slice(0).filter((tor) => tor.ready);
 	}
 
-	create_instance(instance_definition, callback) {
+	async create_instance(instance_definition) {
 		this._instances._weighted_list = void(0);
 		if (!instance_definition.Config)
 			instance_definition.Config = _.extend({}, this.default_tor_config);
 		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
+		
 		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.granax_options, this.logger);
+		
 		instance.id = instance_id;
 		instance.definition = instance_definition;
-		instance.create((error) => {
-			if (error) return callback(error);
-			this._instances.push(instance);
+		
+		await instance.create();
+		
+		this._instances.push(instance);
 
-			instance.once('error', callback)
+		return new Promise((resolve, reject) => {
+			instance.once('error', reject);
+
 			instance.once('ready', () => {
 				this.emit('instance_created', instance);
-				callback && callback(null, instance);
+				resolve(instance);
 			});
 		});
 	}
 
-	add(instance_definitions, callback) {
-		async.each(instance_definitions, (instance_definition, next) => {
-			this.create_instance(instance_definition, next);
-		}, (callback || (() => {})));
+	async add(instance_definitions) {
+		return await Promise.all(instance_definitions.map((instance_definition) => this.create_instance(instance_definition)));
 	}
 
-	create(instances, callback) {
+	async create(instances) {
 		if (typeof(instances) === 'number') {
 			instances = Array.from(Array(instances)).map(() => {
 				return {
@@ -97,7 +102,7 @@ class TorPool extends EventEmitter {
 				};
 			});
 		}
-		return this.add(instances, callback);
+		return await this.add(instances);
 	}
 
 	instance_by_name(name) {
@@ -108,28 +113,25 @@ class TorPool extends EventEmitter {
 		return this.instances[index];
 	}
 
-	remove(instances, callback) {
+	async remove(instances) {
 		this._instances._weighted_list = void(0);
 		let instances_to_remove = this._instances.splice(0, instances);
-		async.each(instances_to_remove, (instance, next) => {
-			instance.exit(next);
-		}, callback);
+		await Promise.all(instances_to_remove.map((instance) => instance.exit()));
 	}
 
-	remove_at(instance_index, callback) {
+	async remove_at(instance_index) {
 		this._instances._weighted_list = void(0);
 
 		let instance = this._instances.splice(instance_index, 1)[0];
-		instance.exit((error) => {
-			callback(error);
-		});
+		await instance.exit();
 	}
 
-	remove_by_name(instance_name, callback) {
+	async remove_by_name(instance_name) {
 		let instance = this.instance_by_name(instance_name);
-		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
+		if (!instance) 
+			throw new Error(`Instance "${name}" not found`);
 		let instance_index = (this.instances.indexOf(instance));
-		return this.remove_at(instance_index, callback);
+		await this.remove_at(instance_index);
 	}
 
 	next() {
@@ -137,103 +139,83 @@ class TorPool extends EventEmitter {
 		return this.instances[0];
 	}
 
-	exit(callback) {
-		async.until(() => { return this._instances.length === 0; }, (next) => {
-			var instance = this._instances.shift();
-			instance.exit(next);
-		}, (error) => {
-			callback && callback(error);
-		});
+	async exit() {
+		await Promise.all(this._instances.map((instance) => instance.exit()));
+		this._instances = [];
 	}
 
-	new_identites(callback) {
-		async.each(this.instances, (tor, next) => {
-			tor.new_identity(next);
-		}, (error) => {
-			callback && callback(error);
-		});
+	async new_identites() {
+		await Promise.all(this.instances.map((instance) => instance.new_identity(next)));
 	}
 
-	new_identity_at(index, callback) {
-		this.instances[index].new_identity(callback);
+	async new_identity_at(index) {
+		await this.instances[index].new_identity();
 	}
 
-	new_identity_by_name(name, callback) {
+	async new_identity_by_name(name) {
 		let instance = this.instance_by_name(name);
-		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
-		instance.new_identity(callback);
+		
+		if (!instance) 
+			throw new Error(`Instance "${name}" not found`);
+		
+		await instance.new_identity();
 	}
 
-	/* Begin Deprecated */
 
-	new_ips(callback) {
-		this.logger.warn(`TorPool.new_ips is deprecated, use TorPool.new_identites`);
-		return this.new_identites(callback);
-	}
-
-	new_ip_at(index, callback) {
-		this.logger.warn(`TorPool.new_ip_at is deprecated, use TorPool.new_identity_at`);
-		return this.new_identity_at(index, callback);
-	}
-
-	/* End Deprecated */
-
-	get_config_by_name(name, keyword, callback) {
+	async get_config_by_name(name, keyword) {
 		let instance = this.instance_by_name(name);
-		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
-		instance.get_config(keyword, callback);
+		if (!instance) 
+			throw new Error(`Instance "${name}" not found`);
+		
+		return await instance.get_config(keyword);
 	}
 
-	set_config_by_name(name, keyword, value, callback) {
+	async set_config_by_name(name, keyword, value) {
 		let instance = this.instance_by_name(name);
-		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
-		instance.set_config(keyword, value, callback);
+		if (!instance) 
+			throw new Error(`Instance "${name}" not found`);
+		
+		return await instance.set_config(keyword, value);
 	}
 
-	get_config_at(index, keyword, callback) {
+	async get_config_at(index, keyword) {
 		let instance = this.instances[index];
-		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
-		instance.get_config(keyword, callback);
+		if (!instance) 
+			throw new Error(`Instance at ${index} not found`);
+		
+		return await instance.get_config(keyword);
 	}
 
-	set_config_at(index, keyword, value, callback) {
+	async set_config_at(index, keyword, value) {
 		let instance = this.instances[index];
-		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
-		instance.set_config(keyword, value, callback);
+		if (!instance) 
+			throw new Error(`Instance at ${index} not found`);
+		return await instance.set_config(keyword, value);
 	}
 
-	set_config_all(keyword, value, callback) {
-		var i = 0;
-		async.until(() => { return i === this.instances.length; },  (next) => {
-			let instance = this.instances[i++];
-
-			instance.set_config(keyword, value, (error) => {
-				next(error);
-			});
-		}, (error) => {
-			callback(error);
-		});
+	async set_config_all(keyword, value) {
+		return await Promise.all(this.instances.map((instance) => instance.set_config(keyword, value)));
 	}
 
-	signal_all(signal, callback) {
-		async.each(this.instances, (instance, next) => {
-			instance.signal(signal, next);
-		}, callback);
+	async signal_all(signal) {
+		await Promise.all(this.instances.map((instance) => instance.signal(signal, next)));
 	}
 
-	signal_by_name(name, signal, callback) {
+	async signal_by_name(name, signal) {
 		let instance = this.instance_by_name(name);
-		if (!instance) return callback && callback(new Error(`Instance "${name}" not found`));
-		instance.signal(signal, callback);
+		if (!instance) 
+			throw new Error(`Instance "${name}" not found`);
+
+		await instance.signal(signal);
 	}
 
-	signal_at(index, signal, callback) {
+	async signal_at(index, signal) {
 		let instance = this.instances[index];
-		if (!instance) return callback && callback(new Error(`Instance at ${index} not found`));
-		instance.signal(signal, callback);
+		if (!instance) 
+			throw new Error(`Instance at ${index} not found`);
+		
+		await instance.signal(signal);
 	}
 };
-
-TorPool.LoadBalanceMethods = load_balance_methods;
 
 module.exports = TorPool;

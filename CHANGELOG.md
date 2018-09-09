@@ -5,6 +5,9 @@
 ### Changes
 - All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await resulting in clearer code. Compatibility with node < v8 will be broken.
 
+### Removes
+- The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.
+
 ## [3.4.3] - 2018-08-10
 
 ### Added
