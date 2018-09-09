@@ -17,14 +17,17 @@ Array.prototype.rotate = (function() {
     };
 })();
 
-const { EventEmitter } = require('eventemitter3');
-const async = require('async');
-const TorProcess = require('./TorProcess');
-const _ = require('lodash');
 const path = require('path');
-const nanoid = require('nanoid');
 const fs = require('fs');
+
+const { EventEmitter } = require('eventemitter3');
+const Promise = require("bluebird");
+const _ = require('lodash');
+
+const nanoid = require('nanoid');
 const WeightedList = require('js-weighted-list');
+
+const TorProcess = require('./TorProcess');
 
 class TorPool extends EventEmitter {
 	constructor(tor_path, default_config, data_directory, load_balance_method, granax_options, logger) {
@@ -80,7 +83,7 @@ class TorPool extends EventEmitter {
 		
 		this._instances.push(instance);
 
-		return new Promise((resolve, reject) => {
+		return await new Promise((resolve, reject) => {
 			instance.once('error', reject);
 
 			instance.once('ready', () => {

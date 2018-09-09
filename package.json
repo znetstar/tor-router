@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "async": "^2.1.4",
+    "bluebird": "^3.5.2",
     "del": "^3.0.0",
     "eventemitter3": "^3.1.0",
     "get-port": "^2.1.0",
