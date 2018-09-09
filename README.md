@@ -1,5 +1,7 @@
 # Tor Router
 
+[![NPM](https://nodei.co/npm/tor-router.png)](https://nodei.co/npm/tor-router/)
+
 *Tor Router* is a simple SOCKS5 proxy server for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor and each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circuit and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
 
 Tor Router also includes a DNS proxy server and a HTTP proxy as well, which like the SOCKS proxy will distribute traffic across multiple instances of Tor in round-robin fashion. The HTTP proxy server can be used to access Tor via an HTTP Proxy.
@@ -13,7 +15,7 @@ The only installation requirement is node.js. Tor is bundled with the applicatio
 To install run: `npm install`
 To start run: `bin/tor-router`
 
-To install globally run: `npm install -g`
+To install globally run: `npm install -g tor-router`
 
 Alternatively docker can be used. The build will retrieve the latest version of Tor from the offical Tor Project repository.
 
