@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.0] - 2018-09-09
+
+### Changes
+- All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await resulting in clearer code. Compatibility with node < v8 will be broken.
+
 ## [3.4.3] - 2018-08-10
 
 ### Added

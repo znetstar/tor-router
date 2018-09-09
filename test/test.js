@@ -19,7 +19,8 @@ nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 var logger = winston.createLogger({
 	level: 'info',
 	format: winston.format.simple(),
-	transports: [new (require('winston-null-transport'))() ]
+	silent: true,
+	transports: [ new (winston.transports.Console)({ silent: true }) ]
 });
 
 const WAIT_FOR_CREATE = 120000;

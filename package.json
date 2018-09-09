@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "3.4.3",
+  "version": "4.0.0",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
@@ -35,7 +35,6 @@
     "socksv5": "git+https://github.com/lee-elenbaas/socksv5.git",
     "temp": "^0.8.3",
     "winston": "^3.0.0-rc5",
-    "winston-null-transport": "git+https://github.com/NCIOCPL/winston-null-transport.git#1.0.0",
     "yargs": "^11.0.0"
   }
 }
