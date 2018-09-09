@@ -110,7 +110,7 @@ class ControlServer {
 		server.expose('signalInstanceByName', this.torPool.signal_by_name.bind(this.torPool));
 	}
 
-	listen(port) {  
+	async listen(port) {  
 		this.tcpTransport = new rpc.tcpTransport({ port });
 		this.tcpTransport.listen(this.server);
 	}

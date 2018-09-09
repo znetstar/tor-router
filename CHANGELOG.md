@@ -5,6 +5,7 @@
 ### Changes
 - All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await to increase readability.
 - The `logger` argument to the constructor's of all classes is now optional
+- The mocha test has been split into individual files
 
 ### Removes
 - The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.
