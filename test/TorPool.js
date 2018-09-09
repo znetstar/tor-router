@@ -5,14 +5,13 @@ const _ = require('lodash');
 
 const { TorPool } = require('../');
 const { WAIT_FOR_CREATE } = require('./constants');
-const logger = require('../src/winston-silent-logger');
 
+nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
-let torPool;
 describe('TorPool', function () {
-	torPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null, logger);
+	const torPoolFactory = () => new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
 
 	describe('#create_instance(instance_defintion)', function () {
 		let instance_defintion = {
@@ -21,6 +20,9 @@ describe('TorPool', function () {
 				ProtocolWarnings: 1
 			}
 		};
+
+		let torPool;
+		before('create tor pool', () => { torPool = torPoolFactory(); })
 
 		it('should create one tor instance based on the provided definition', async function () {
 			this.timeout(WAIT_FOR_CREATE);
@@ -51,9 +53,12 @@ describe('TorPool', function () {
 			{ Name: 'instance-2', Config: { ProtocolWarnings: 1 } }
 		];
 
+		let torPool;
+		before('create tor pool', () => { torPool = torPoolFactory(); })
+
 		it('should create instances from several instance definitions', async function () {
 			this.timeout(WAIT_FOR_CREATE*2);
-			await torPool.add(instance_defintions)
+			await torPool.add(_.cloneDeep(instance_defintions))
 		});
 
 		it('2 instances should exist in the pool', function () {
@@ -61,19 +66,21 @@ describe('TorPool', function () {
 		});
 
 		it('the created instances should have the same defintion properties as the input definitions', function () {
-			assert.deepEqual(instance_defintions, torPool.instances.map((instance) => { 
+			let live_instance_definitions = torPool.instances.map((instance) => { 
 				let def_clone = _.cloneDeep(instance.definition);
 				delete def_clone.Config.DataDirectory;
 				return def_clone;
-			}).sort(function(a,b) {return (a.Name > b.Name) ? 1 : ((b.Name > a.Name) ? -1 : 0);}));
+			}).sort((a,b) => (a.Name > b.Name) ? 1 : ((b.Name > a.Name) ? -1 : 0));
+			
+			assert.deepEqual(instance_defintions, live_instance_definitions);
 		});
 
-		it('the created instances should have the same config properties specified in the definiton', async function (done) {
+		it('the created instances should have the same config properties specified in the definiton', async function () {
 			this.timeout(10000);
 
 			let values = await Promise.all(torPool.instances.map((instance) => instance.get_config('ProtocolWarnings')));
-
-			assert.isTrue( values.every((value) => value === 1) );
+			values = _.flatten(values);
+			assert.isTrue( values.every((value) => value === "1") );
 		});
 
 		after('shutdown tor pool', async function () {
@@ -82,7 +89,13 @@ describe('TorPool', function () {
 	});
 
 	describe('#create(number_of_instances)', function () {
-		torPool.default_tor_config = { TestSocks: 1 };
+		let torPool;
+
+		before('create tor pool', () => { 
+			torPool = torPoolFactory(); 
+			torPool.default_tor_config = { TestSocks: 1 };
+		})
+
 		it('should create 2 instances with the default config', async function () {
 			this.timeout(WAIT_FOR_CREATE*2);
 			await torPool.create(2);
@@ -95,19 +108,21 @@ describe('TorPool', function () {
 		it('the created instances should have the same config properties specified in the default config', async function () {
 			this.timeout(10000);
 
-			let values = await Promise.all(torPool.instances.map((instance) => instance.get_config('ProtocolWarnings')));
-			
-			assert.isTrue( values.every((value) => value === 1) );
+			let values = await Promise.all(torPool.instances.map((instance) => instance.get_config('TestSocks')));
+			values = _.flatten(values);
+			assert.isTrue( values.every((value) => value === "1") );
 		});
 
 		after('shutdown tor pool', async function () {
 			torPool.default_tor_config = {};
-			await torPool.exit(done);
+			await torPool.exit();
 		});
 	});
 
-
+	let torPool;
 	describe('#next()', function () {
+		before('create tor pool', () => { torPool = torPoolFactory(); })
+
 		before('create tor instances', async function () {
 			this.timeout(WAIT_FOR_CREATE * 3);
 			await torPool.add([
@@ -127,8 +142,8 @@ describe('TorPool', function () {
 		});
 
 		it('result of next should be different if run twice', function () {
-			var t1 = torPool.next().instance_name;
-			var t2 = torPool.next().instance_name;
+			let t1 = torPool.next().instance_name;
+			let t2 = torPool.next().instance_name;
 			assert.notEqual(t1, t2);
 		});
 	});
@@ -192,8 +207,8 @@ describe('TorPool', function () {
 			this.timeout(5000);
 
 			let values = await Promise.all(torPool.instances.map((instance) => instance.get_config('TestSocks')));
-
-			assert.isTrue( values.every((value) => value === 1) );
+			values = _.flatten(values);
+			assert.isTrue( values.every((value) => value === "1") );
 		});
 
 		after('unset config options', async function () {

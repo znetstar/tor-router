@@ -6,7 +6,7 @@ const rpc = require('jrpc2');
 
 class ControlServer {
 	constructor(logger, nconf) {
-		this.torPool = new TorPool(nconf.get('torPath'), null, nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'),logger);
+		this.torPool = new TorPool(nconf.get('torPath'), (() =>  nconf.get('torConfig')), nconf.get('parentDataDirectory'), nconf.get('loadBalanceMethod'), nconf.get('granaxOptions'), logger);
 		this.logger = logger || require('./winston-silent-logger');
 		this.nconf = nconf;
 
@@ -22,9 +22,9 @@ class ControlServer {
 
 		server.expose('queryInstances', (async () => {
 			if (!this.torPool)
-				throw new Error('No instances created');
+				throw new Error('No Tor Pool created');
 			
-			this.torPool.instances.map(instance_info);
+			return this.torPool.instances.map(instance_info);
 		}).bind(this));
 
 		server.expose('queryInstanceByName', (async (instance_name) => {
@@ -36,7 +36,7 @@ class ControlServer {
 			if (!instance)
 				throw new Error(`Instance "${instance_name}"" does not exist`);
 
-			return instance_info(i)	
+			return instance_info(instance);	
 		}).bind(this));
 
 		server.expose('queryInstanceAt', (async (index) => {
@@ -51,9 +51,17 @@ class ControlServer {
 			return instance_info(this.torPool.instance_at(index));	
 		}).bind(this));
 
-		server.expose('createInstances', this.torPool.create.bind(this.torPool));
-		
-		server.expose('addInstances', this.torPool.add.bind(this.torPool));
+		server.expose('createInstances', (async (num) => {
+			let instances = await this.torPool.create(num);
+
+			return instances.map(instance_info);
+		}).bind(this));
+
+		server.expose('addInstances', (async (defs) => {
+			let instances = await this.torPool.create(defs);
+
+			return instances.map(instance_info);
+		}).bind(this));
 
 		server.expose('removeInstances', this.torPool.remove.bind(this.torPool));
 
@@ -67,7 +75,7 @@ class ControlServer {
 
 		server.expose('newIdentityByName', this.torPool.new_identity_by_name.bind(this.torPool));
 
-		server.expose('nextInstance', (async () => this.torPool.next()).bind(this));
+		server.expose('nextInstance', (async () => instance_info( await this.torPool.next() )).bind(this));
 
 		server.expose('closeInstances', (async () => this.torPool.exit()).bind(this));
 		
@@ -81,7 +89,7 @@ class ControlServer {
 
 		server.expose('setTorConfig', (async (config) => {
 			await Promise.all(Object.keys(config).map((key) => {
-				var value = config[key];
+				let value = config[key];
 
 				return this.torPool.set_config_all(key, value);
 			}));
@@ -124,23 +132,23 @@ class ControlServer {
 		return this.torPool;
 	}
 
-	createSOCKSServer(port) {
+	async createSOCKSServer(port) {
 		this.socksServer = new SOCKSServer(this.torPool, this.logger);
-		this.socksServer.listen(port || 9050);
+		await this.socksServer.listen(port || 9050);
 		this.logger.info(`[socks]: Listening on ${port}`);
 		this.socksServer;
 	}
 
-	createHTTPServer(port) {
+	async createHTTPServer(port) {
 		this.httpServer = new HTTPServer(this.torPool, this.logger);
-		this.httpServer.listen(port || 9080);
+		await this.httpServer.listen(port || 9080);
 		this.logger.info(`[http]: Listening on ${port}`);
 		this.httpServer;
 	}
 
-	createDNSServer(port) {
+	async createDNSServer(port) {
 		this.dnsServer = new DNSServer(this.torPool, this.nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
-		this.dnsServer.serve(port || 9053);
+		await this.dnsServer.serve(port || 9053);
 		this.logger.info(`[dns]: Listening on ${port}`);
 		this.dnsServer;
 	}

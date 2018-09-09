@@ -5,4 +5,5 @@ describe("TorRouter", function () {
     require('./HTTPServer');
     require('./DNSServer');
     require('./ControlServer');
+    require('./RPCInterface');
 });

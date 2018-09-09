@@ -112,7 +112,7 @@ class TorProcess extends EventEmitter {
 
 		let configFile = await temp.openAsync('tor-router');
 		let configPath = configFile.path;
-		fs.writeFileAsync(configPath, text);
+		await fs.writeFileAsync(configPath, text);
 
 		let tor = spawn(this.tor_path, ['-f', configPath], {
 			stdio: ['ignore', 'pipe', 'pipe'],

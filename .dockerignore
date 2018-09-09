@@ -5,4 +5,5 @@ npm-debug.log
 docker-compose.yml
 .env
 README.md
-Jenkinsfile
+.vscode
+.DS_Store

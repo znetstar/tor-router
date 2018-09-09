@@ -24,6 +24,7 @@ async function main(nconf, logger) {
     let control = new ControlServer(logger, nconf);
 
     try {
+        await control.listen(control_port);
 
         if (socks_port) {
             if (typeof(socks_port) === 'boolean') {
@@ -50,13 +51,11 @@ async function main(nconf, logger) {
         }
 
         if (instances) {
-            logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instances...`)
+            logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instance(s)...`)
             await control.torPool.create(instances);
             
             logger.info('[tor]: tor started');
         }
-
-        await control.listen(control_port);
         logger.info(`[control]: control Server listening on ${control_port}`);
     } catch (error) {
         logger.error(`[global]: error starting application: ${error.stack}`);
@@ -160,6 +159,8 @@ nconf
 let nconf_config = nconf.get('config');
 if (nconf_config) {
     nconf.file(nconf_config);
+} else {
+    nconf.use('memory');
 }
 
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));

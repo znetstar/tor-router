@@ -1,21 +1,21 @@
 
 const _ = require('lodash');
 const assert = require('chai').assert;
-const rpc = require('jrpc2');
 const Promise = require('bluebird');
 const nconf = require('nconf');
 const rpc = require('jrpc2');
+const getPort = require('get-port');
 
-const logger = require('../src/winston-silent-logger');
-
+nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 const { ControlServer } = require('../');
+const { WAIT_FOR_CREATE } = require('./constants');
 
-let rpcControlServer = new ControlServer(logger, nconf);
+let rpcControlServer = new ControlServer(null, nconf);
 let rpcControlPort;
 let rpcClient;
-describe('ControlServer - RPC', function () {
+describe('ControlServer - RPC Interface', function () {
 	before('setup control server', async function () {
 		rpcControlPort = await getPort();
 		await rpcControlServer.listen(rpcControlPort);
@@ -35,11 +35,11 @@ describe('ControlServer - RPC', function () {
 		it('should return a list of instances', async function () {
 			let raw = await rpcClient.invokeAsync('queryInstances', []);
 
-			var instances = JSON.parse(raw).result;
+			let instances = JSON.parse(raw).result;
 
 			assert.isArray(instances, 'Did not return an array');
-			assert.isNotEmpty(instances);
-			assert.isTrue(instances.every((instance) => ( typeof(instance.name) !== 'undefined' ) && ( instance.name !== null )));
+			assert.isNotEmpty(instances, 'Returned an empty array');
+			assert.isTrue(instances.every((instance) => ( typeof(instance.name) !== 'undefined' ) && ( instance.name !== null )), 'Objects were not valid');
 		});
 	});
 
@@ -62,7 +62,7 @@ describe('ControlServer - RPC', function () {
 		it('should return a single instance by name', async function () {
 			let raw = await rpcClient.invokeAsync('queryInstanceByName', ['instance-1']);
 			
-			var instance = JSON.parse(raw).result;
+			let instance = JSON.parse(raw).result;
 			
 			assert.isOk(instance);
 		});
@@ -73,7 +73,7 @@ describe('ControlServer - RPC', function () {
 		it('should return a single instance by index', async function () {
 			let raw = await rpcClient.invokeAsync('queryInstanceAt', [0]);
 			
-			var instance = JSON.parse(raw).result;
+			let instance = JSON.parse(raw).result;
 			
 			assert.isOk(instance);
 		});
@@ -132,9 +132,10 @@ describe('ControlServer - RPC', function () {
 			this.timeout(WAIT_FOR_CREATE);
 
 			await rpcControlServer.torPool.create_instance({ Name: 'config-test' });
-			let value = await rpcControlServer.torPool.instance_by_name('config-test').get_config('TestSocks');
+			let values = await rpcControlServer.torPool.instance_by_name('config-test').get_config('TestSocks');
 
-			assert.equal(value, 1);
+			assert.isNotEmpty(values);
+			assert.equal(values[0], "1");
 		});
 
 		after('remove instance', async function () {
@@ -150,8 +151,8 @@ describe('ControlServer - RPC', function () {
 		});
 
 		it('should return a tor config with a modified property', async function () {
-			this.timeout(3000);
-			let raw = await rpcClient.invokeAsync('getDefaultTorConfig', [ { } ]);
+			this.timeout(6000);
+			let raw = await rpcClient.invokeAsync('getDefaultTorConfig', [  ]);
 			let config = JSON.parse(raw).result;
 
 			assert.equal(config.TestSocks, 1);
@@ -198,11 +199,12 @@ describe('ControlServer - RPC', function () {
 			await rpcControlServer.torPool.instance_by_name('instance-1').set_config('TestSocks', 1);
 		});
 
-		it('should retrieve the property from the tor instance', async function (done) {
-			let raw = await rpcClient.invokeAsync('getInstanceConfigByName', ['instance-1']);		
-			let value = JSON.parse(raw).result;
+		it('should retrieve the property from the tor instance', async function () {
+			let raw = await rpcClient.invokeAsync('getInstanceConfigByName', ['instance-1', "TestSocks"]);		
+			let values = JSON.parse(raw).result;
 
-			assert.equal(value, 1);
+			assert.isNotEmpty(values);
+			assert.equal(values[0], "1");
 		});
 
 		after('unset config property', async function () {
@@ -218,10 +220,11 @@ describe('ControlServer - RPC', function () {
 		});
 
 		it('should retrieve the property from the tor instance', async function () {
-			let raw = await rpcClient.invokeAsync('getInstanceConfigByName', [0]);
-			let value = JSON.parse(raw).result;
+			let raw = await rpcClient.invokeAsync('getInstanceConfigAt', [0, "TestSocks"]);
+			let values = JSON.parse(raw).result;
 
-			assert.equal(value, 1);
+			assert.isNotEmpty(values);
+			assert.equal(values[0], "1");
 		});
 
 		after('unset config property', async function () {

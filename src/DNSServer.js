@@ -1,7 +1,29 @@
 const dns = require('native-dns');
 const { UDPServer } = require('native-dns');
+const Promise = require('bluebird');
 
 class DNSServer extends UDPServer {
+	async listen() {
+		let args = Array.from(arguments);
+		let inner_func = super.serve;
+
+		if (!args[1])
+			args[1] = null;
+
+		return await new Promise((resolve, reject) => {
+			args.push(() => {
+				let args = Array.from(arguments);
+				resolve.apply(args);
+			});
+
+			try {
+				inner_func.apply(this, args);
+			} catch (error) {
+				reject(error);
+			}
+		});
+	}
+
 	constructor(tor_pool, dns_options, dns_timeout, logger) {
 		super(dns_options);
 		this.logger = logger || require('./winston-silent-logger');

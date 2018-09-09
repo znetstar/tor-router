@@ -2,12 +2,25 @@ const http = require('http');
 const URL = require('url');
 const { Server } = http;
 
+const Promise = require('bluebird');
 const socks = require('socksv5');
 const SocksProxyAgent = require('socks-proxy-agent');
 
 const TOR_ROUTER_PROXY_AGENT = 'tor-router';
 
 class HTTPServer extends Server {
+	async listen() {
+		return await new Promise((resolve, reject) => {
+			let args = Array.from(arguments);
+			let inner_func = super.listen;
+			args.push(() => {
+				let args = Array.from(arguments);
+				resolve.apply(args);
+			});
+			inner_func.apply(this, args);
+		});
+	}
+
 	constructor(tor_pool, logger) {
 		let handle_http_connections = (req, res) => {
 			let url = URL.parse(req.url); 
@@ -26,12 +39,12 @@ class HTTPServer extends Server {
 			req.on('data', onIncomingData);
 			req.on('end', preConnectClosed);
 			req.on('error', function (err) {
-				logger.error("[http-proxy]: an error occured: "+err.message);
+				this.logger.error("[http-proxy]: an error occured: "+err.message);
 			});
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
+				this.logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
 
 				let proxy_req = http.request({
 					method: req.method,
@@ -74,7 +87,7 @@ class HTTPServer extends Server {
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
-				logger.debug(`[http-proxy]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				this.logger.debug(`[http-proxy]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				tor_pool.once('instance_created', connect);
 			}
 		};
@@ -85,7 +98,7 @@ class HTTPServer extends Server {
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger && logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${hostname}:${port}`)
+				this.logger && this.logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${hostname}:${port}`)
 				var outbound_socket;
 
 				let onClose = (error) => {
@@ -125,14 +138,14 @@ class HTTPServer extends Server {
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
-				logger.debug(`[http-connect]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				this.logger.debug(`[http-connect]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				tor_pool.once('instance_created', connect);
 			}
 		};
 
 		super(handle_http_connections);
 		this.on('connect', handle_connect_connections);
-
+		
 		this.logger = logger || require('./winston-silent-logger');
 		this.tor_pool = tor_pool;
 	}

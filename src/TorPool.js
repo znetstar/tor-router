@@ -29,19 +29,32 @@ const WeightedList = require('js-weighted-list');
 
 const TorProcess = require('./TorProcess');
 
+Promise.promisifyAll(fs);
+
 class TorPool extends EventEmitter {
 	constructor(tor_path, default_config, data_directory, load_balance_method, granax_options, logger) {
+		if (!data_directory)
+			throw new Error('Invalid "data_directory"');
 		super();
 		this._instances = [];
-		default_config = _.extend({}, (default_config || {}));
-		this.default_tor_config = default_config;
+		this._default_tor_config = default_config;
 		this.data_directory = data_directory;
 		this.load_balance_method = load_balance_method;
-		!fs.existsSync(this.data_directory) && fs.mkdirSync(this.data_directory);
 		this.tor_path = tor_path;
 		this.logger = logger || require('./winston-silent-logger');
 		this.granax_options = granax_options;
 	}
+
+	get default_tor_config() {
+		if (typeof(this._default_tor_config) === 'function')
+			return this._default_tor_config();
+		else if (this._default_tor_config)
+			return _.cloneDeep(this._default_tor_config);
+		else
+			return {};
+	}
+
+	set default_tor_config(value) { this._default_tor_config = value; }
 
 	static get load_balance_methods() {
 		return {
@@ -68,9 +81,11 @@ class TorPool extends EventEmitter {
 	}
 
 	async create_instance(instance_definition) {
+		if (!(fs.existsSync(this.data_directory)))
+			await fs.mkdirAsync(this.data_directory);
+
 		this._instances._weighted_list = void(0);
-		if (!instance_definition.Config)
-			instance_definition.Config = _.extend({}, this.default_tor_config);
+		instance_definition.Config = _.extend(_.cloneDeep(this.default_tor_config), (instance_definition.Config || {}));
 		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
 		
@@ -138,7 +153,7 @@ class TorPool extends EventEmitter {
 	}
 
 	next() {
-		this._instances = load_balance_methods[this.load_balance_method](this._instances);
+		this._instances = TorPool.load_balance_methods[this.load_balance_method](this._instances);
 		return this.instances[0];
 	}
 
@@ -148,7 +163,7 @@ class TorPool extends EventEmitter {
 	}
 
 	async new_identites() {
-		await Promise.all(this.instances.map((instance) => instance.new_identity(next)));
+		await Promise.all(this.instances.map((instance) => instance.new_identity()));
 	}
 
 	async new_identity_at(index) {
@@ -201,7 +216,7 @@ class TorPool extends EventEmitter {
 	}
 
 	async signal_all(signal) {
-		await Promise.all(this.instances.map((instance) => instance.signal(signal, next)));
+		await Promise.all(this.instances.map((instance) => instance.signal(signal)));
 	}
 
 	async signal_by_name(name, signal) {

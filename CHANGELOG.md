@@ -2,10 +2,14 @@
 
 ## [4.0.0] - 2018-09-09
 
+### Added
+- All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which returns a Promise that will resolve when the server is listening.
+
 ### Changes
 - All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await to increase readability.
 - The `logger` argument to the constructor's of all classes is now optional
-- The mocha test has been split into individual files
+- The `Config` property of instance definitions will now inherit from `TorPool.default_tor_config`.
+- The mocha test has been split into individual files all under `test/`
 
 ### Removes
 - The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.

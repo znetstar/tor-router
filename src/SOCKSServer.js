@@ -1,7 +1,20 @@
 const socks = require('socksv5');
+const Promise = require('bluebird');
 const { Server } = socks;
 
 class SOCKSServer extends Server{
+	async listen() {
+		return await new Promise((resolve, reject) => {
+			let args = Array.from(arguments);
+			let inner_func = super.listen;
+			args.push(() => {
+				let args = Array.from(arguments);
+				resolve.apply(args);
+			});
+			inner_func.apply(this, args);
+		});
+	}
+
 	constructor(tor_pool, logger) {
 		let handleConnection = (info, accept, deny) => {
 			let inbound_socket = accept(true);
@@ -28,7 +41,7 @@ class SOCKSServer extends Server{
 
 			let connect = (tor_instance) => {
 				let socks_port = tor_instance.socks_port;
-				logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
+				this.logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
 
 				socks.connect({
 					host: info.dstAddr,
@@ -60,7 +73,7 @@ class SOCKSServer extends Server{
 			if (tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
-				logger.debug(`[socks]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
+				this.logger.debug(`[socks]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				tor_pool.once('instance_created', connect);
 			}
 		};

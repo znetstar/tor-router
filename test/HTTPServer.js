@@ -3,18 +3,18 @@ const request = require('request-promise');
 const getPort = require('get-port');
 const ProxyAgent = require('proxy-agent');
 
-const logger = require('../src/winston-silent-logger');
 const { TorPool, HTTPServer } = require('../');
 const { WAIT_FOR_CREATE, PAGE_LOAD_TIME } = require('./constants');
 
+nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
 let httpServerTorPool;
 let httpServer;
 describe('HTTPServer', function () {
-	httpServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null, logger);
-	httpServer = new HTTPServer(httpServerTorPool, logger);
+	httpServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
+	httpServer = new HTTPServer(httpServerTorPool);
 	let httpPort;
 	before('start up server', async function (){
 		this.timeout(WAIT_FOR_CREATE);
@@ -22,7 +22,7 @@ describe('HTTPServer', function () {
 		await httpServerTorPool.create(1);
 		httpPort = await getPort();
 
-		httpServer.listen(httpPort);
+		await httpServer.listen(httpPort);
 	});
 
 	describe('#handle_http_connections(req, res)', function () {
@@ -31,7 +31,7 @@ describe('HTTPServer', function () {
 
 			await request({
 				url: 'http://example.com',
-				agent: new ProxyAgent(`http://localhost:${httpPort}`)
+				agent: new ProxyAgent(`http://127.0.0.1:${httpPort}`)
 			});
 		});
 	});
@@ -42,7 +42,7 @@ describe('HTTPServer', function () {
 
 			await request({
 				url: 'https://example.com',
-				agent: new ProxyAgent(`http://localhost:${httpPort}`)
+				agent: new ProxyAgent(`http://127.0.0.1:${httpPort}`)
 			});
 		});
 	});

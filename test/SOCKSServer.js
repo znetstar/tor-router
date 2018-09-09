@@ -3,18 +3,18 @@ const request = require('request-promise');
 const getPort = require('get-port');
 const ProxyAgent = require('proxy-agent');
 
-const logger = require('../src/winston-silent-logger');
 const { TorPool, SOCKSServer } = require('../');
 const { WAIT_FOR_CREATE, PAGE_LOAD_TIME } = require('./constants');
 
+nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
 let socksServerTorPool;
 let socksServer;
 describe('SOCKSServer', function () {
-	socksServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null, logger);
-	socksServer = new SOCKSServer(socksServerTorPool, logger);
+	socksServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
+	socksServer = new SOCKSServer(socksServerTorPool);
 	let socksPort;
 	before('start up server', async function (){
 		this.timeout(WAIT_FOR_CREATE);
@@ -22,7 +22,7 @@ describe('SOCKSServer', function () {
 		await socksServerTorPool.create(1);
 		socksPort = await getPort();
 
-		socksServer.listen(socksPort);
+		await socksServer.listen(socksPort);
 	});
 
 	describe('#handleConnection(socket)', function () {
@@ -31,7 +31,7 @@ describe('SOCKSServer', function () {
 
 			await request({
 				url: 'http://example.com',
-				agent: new ProxyAgent(`socks://localhost:${socksPort}`)
+				agent: new ProxyAgent(`socks://127.0.0.1:${socksPort}`)
 			});
 		});
 	});

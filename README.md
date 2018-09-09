@@ -41,7 +41,7 @@ For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instance
 
 ## Testing
 
-Tests are written in mocha and can be found under `test/test.js` and can be run with `npm test`
+Tests are written in mocha and can be found under `test/` and can be run with `npm test`
 
 ## Configuration
 

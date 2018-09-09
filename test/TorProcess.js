@@ -3,13 +3,13 @@ const assert = require('chai').assert;
 
 const { TorProcess } = require('../');
 const { WAIT_FOR_CREATE } = require('./constants');
-const logger = require('../src/winston-silent-logger');
 
+nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
 describe('TorProcess', function () {
-	let tor = new TorProcess(nconf.get('torPath'), { DataDirectory: nconf.get('parentDataDirectory'), ProtocolWarnings: 0 }, null, logger);
+	let tor = new TorProcess(nconf.get('torPath'), { DataDirectory: nconf.get('parentDataDirectory'), ProtocolWarnings: 0 }, null);
 	describe('#create()', function () {
 		this.timeout(WAIT_FOR_CREATE);
 
