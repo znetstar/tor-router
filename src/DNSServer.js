@@ -31,6 +31,8 @@ class DNSServer extends UDPServer {
 
 		const handle_dns_request = (req, res) => {
 			let connect = (tor_instance) => {
+				let source = { hostname: req.address.address, port: req.address.port, proto: 'dns' };
+				this.emit('instance-connection', tor_instance, source);
 				for (let question of req.question) {
 					let dns_port = (tor_instance.dns_port);
 					let outbound_req = dns.Request({
@@ -39,11 +41,12 @@ class DNSServer extends UDPServer {
 						timeout: dns_timeout
 					});
 
+					this.logger.verbose(`[dns]: ${source.hostname}:${source.port} → 127.0.0.1:${dns_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' }`);
+
 					outbound_req.on('message', (err, answer) => {
 						if (!err && answer) {
 							for (let a of answer.answer){
 								res.answer.push(a);
-								this.logger.verbose(`[dns]: ${question.name} type ${dns.consts.QTYPE_TO_NAME[question.type]} → 127.0.0.1:${dns_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${a.address}`)
 							}
 						}
 					});	

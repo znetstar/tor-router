@@ -109,7 +109,7 @@ class TorPool extends EventEmitter {
 	}
 
 	async add(instance_definitions) {
-		return await Promise.all(instance_definitions.map((instance_definition) => this.create_instance(instance_definition)));
+		return await Promise.all([].concat(instance_definitions).map((instance_definition) => this.create_instance(instance_definition)));
 	}
 
 	async create(instances) {

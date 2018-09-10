@@ -1,6 +1,6 @@
 
 const _ = require('lodash');
-const assert = require('chai').assert;
+const { assert } = require('chai');
 const nconf = require('nconf');
 const getPort = require('get-port');
 

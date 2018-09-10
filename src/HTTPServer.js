@@ -4,7 +4,6 @@ const { Server } = http;
 
 const Promise = require('bluebird');
 const socks = require('socksv5');
-const ProxyAgent = require('proxy-agent');
 
 const TOR_ROUTER_PROXY_AGENT = 'tor-router';
 
@@ -92,8 +91,10 @@ class HTTPServer extends Server {
 			});
 
 			let connect = (tor_instance) => {
+				let source = { hostname: req.connection.remoteAddress, port: req.connection.remotePort, proto: 'http', by_name: Boolean(instance) };
+				this.emit('instance-connection', tor_instance, source);
 				let socks_port = tor_instance.socks_port;
-				this.logger.verbose(`[http-proxy]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port} → ${url.hostname}:${url.port}`);
+				this.logger.verbose(`[http-proxy]: ${source.hostname}:${source.port} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${url.hostname}:${url.port}`);
 
 				let proxy_req = http.request({
 					method: req.method,
@@ -101,7 +102,12 @@ class HTTPServer extends Server {
 					port: url.port,
 					path: url.path,
 					headers: req.headers,
-					agent: new ProxyAgent(`socks://127.0.0.1:${socks_port}`)
+					agent: socks.HttpAgent({
+						proxyHost: '127.0.0.1',
+						proxyPort: socks_port,
+						auths: [ socks.auth.None() ],
+						localDNS: false
+					})
 				}, (proxy_res) => {
 					proxy_res.on('data', (chunk) => {
 						res.write(chunk);
@@ -160,8 +166,10 @@ class HTTPServer extends Server {
 			let port = Number(req.url.split(':').pop());
 
 			let connect = (tor_instance) => {
+				let source = { hostname: req.connection.remoteAddress, port: req.connection.remotePort, proto: 'http-connect', by_name: Boolean(instance) };
+				this.emit('instance-connection', tor_instance, source);
 				let socks_port = tor_instance.socks_port;
-				this.logger && this.logger.verbose(`[http-connect]: ${req.connection.remoteAddress}:${req.connection.remotePort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${hostname}:${port}`)
+				this.logger && this.logger.verbose(`[http-connect]: ${source.hostname}:${source.port} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${hostname}:${port}`)
 				var outbound_socket;
 
 				let onClose = (error) => {

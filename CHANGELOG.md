@@ -3,6 +3,7 @@
 ## [4.0.0] - 2018-09-09
 
 ### Added
+- You can now proxy through a specific instance using the username field when connecting to a proxy. Setting `--proxyByName` or `-n` to false will disable this feature. For example to connect to an instance named `instance-1` via http use `http://instance-1:@localhost:9080`.
 - The control server will accept WebSocket connections if the `--websocketControlHost` or `-w` argument is set. If the argument is used without a hostname it will default to 9078 on all interfaces.
 - All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which takes a port and optionally, a host returns a Promise that will resolve when the server is listening.
 
@@ -12,6 +13,7 @@
 - The `logger` argument to the constructor of all classes is now optional
 - The `Config` property of instance definitions will now inherit from `TorPool.default_tor_config`.
 - The mocha test has been split into individual files all under `test/`
+- DNS shows the source/destination hostname/port in logs instead of what the query was resolved to
 
 ### Removes
 - The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.

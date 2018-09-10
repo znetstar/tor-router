@@ -204,7 +204,7 @@ let logger = winston.createLogger({
     level: logLevel,
     format: winston.format.simple(),
     silent: (logLevel === 'null'),
-    transports: new (winston.transports.Console)({ level: (logLevel !== 'null' ? logLevel : void(0)), silent: (logLevel === 'null') })
+    transports: [ new (winston.transports.Console)({ level: (logLevel !== 'null' ? logLevel : void(0)), silent: (logLevel === 'null') }) ]
 });
 
 module.exports = { main, nconf, logger };

@@ -50,7 +50,12 @@ describe('DNSServer', function () {
 		});
 	});
 
+	after('shutdown server', function () {
+		dnsServer.close();
+	});
+
 	after('shutdown tor pool', async function () {
+		dnsServer.close();
 		await dnsServerTorPool.exit();
 	});
 });

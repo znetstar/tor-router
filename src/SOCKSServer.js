@@ -16,7 +16,7 @@ class SOCKSServer extends Server{
 	}
 
 	authenticate_user(username, password, callback) {
-		let deny_un = this.proxy_by_name.deny_unidentifed_users;
+		let deny_un = this.proxy_by_name.deny_unidentified_users;
 
 		// No username and deny unindentifed then deny
 		if (!username && deny_un) callback(false);
@@ -32,7 +32,7 @@ class SOCKSServer extends Server{
 			return callback(false);
 
 		// Otherwise allow
-		callback(true, instance);
+		callback(true, true);
 	}
 
 	constructor(tor_pool, logger, proxy_by_name) {
@@ -41,7 +41,7 @@ class SOCKSServer extends Server{
 			let instance;
 
 			if (inbound_socket.user)
-				instance = inbound_socket.user;
+				instance = this.tor_pool.instance_by_name(inbound_socket.user);
 
 			let outbound_socket;
 			let buffer = [];
@@ -65,8 +65,10 @@ class SOCKSServer extends Server{
 			inbound_socket.on('error', onClose);
 
 			let connect = (tor_instance) => {
+				let source = { hostname: info.srcAddr, port: info.srcPort, proto: 'socks', by_name: Boolean(instance) };
 				let socks_port = tor_instance.socks_port;
-				this.logger.verbose(`[socks]: ${info.srcAddr}:${info.srcPort} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
+				this.emit('instance-connection', tor_instance, source);
+				this.logger.verbose(`[socks]: ${source.hostname}:${source.port} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
 
 				socks.connect({
 					host: info.dstAddr,
@@ -115,20 +117,18 @@ class SOCKSServer extends Server{
 
 		super(handleConnection);
 
-		this.logger = logger || require('./winston-silent-logger');
-		this.tor_pool = tor_pool;
-		this.proxy_by_name = proxy_by_name;
-
 		let auth = socks.auth.None();
 		
-		if (!proxy_by_name) {
-			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned off`);
-		} else {
-			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned on`);
-			auth = socks.auth.UserPassword(this.authenticate_user);
+		if (proxy_by_name) {
+			auth = socks.auth.UserPassword(this.authenticate_user.bind(this));
 		}
 
 		this.useAuth(auth);
+		
+		this.logger = logger || require('./winston-silent-logger');
+		this.tor_pool = tor_pool;
+		this.proxy_by_name = proxy_by_name;
+		this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned ${proxy_by_name ? 'on' : 'off'}`);
 	}
 };
 
