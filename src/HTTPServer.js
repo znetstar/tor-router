@@ -176,16 +176,14 @@ class HTTPServer extends Server {
 					inbound_socket && inbound_socket.end();
 					outbound_socket && outbound_socket.end();
 
-					inbound_socket = outbound_socket = buffer = void(0);
+					inbound_socket = outbound_socket = void(0);
 
-					if (error)
+					if (error instanceof Error)
 						this.logger.error(`[http-connect]: an error occured: ${error.message}`)
 				};
 
-				var buffer = [head];
-				let onInboundData = function (data) {
-					buffer.push(data);
-				};
+				inbound_socket.on('error', onClose);
+				inbound_socket.on('close', onClose);
 
 				socks.connect({
 					host: hostname,
@@ -196,8 +194,8 @@ class HTTPServer extends Server {
 					auths: [ socks.auth.None() ]
 				}, ($outbound_socket) => {
 					outbound_socket = $outbound_socket;
-					outbound_socket && outbound_socket.on('close', onClose);
-					outbound_socket && outbound_socket.on('error', onClose);
+					outbound_socket.on('close', onClose);
+					outbound_socket.on('error', onClose);
 
 					inbound_socket.write(`HTTP/1.1 200 Connection Established\r\n'+'Proxy-agent: ${TOR_ROUTER_PROXY_AGENT}\r\n` +'\r\n');
 					outbound_socket.write(head);

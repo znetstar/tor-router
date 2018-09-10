@@ -95,9 +95,10 @@ async function main(nconf, logger) {
             thereWasAnExitError = true;
         }
 
-        if (handleError && error) {
-            console.log(error)
+        if (error instanceof Error) {
             logger.error(`[global]: error shutting down: ${error.message}`);
+        } else {
+            error = 0;
         }
 
         process.exit(Number(Boolean(error || thereWasAnExitError)));
@@ -191,6 +192,10 @@ nconf
 
 let nconf_config = nconf.get('config');
 if (nconf_config) {
+    if (!require('fs').existsSync(nconf_config)) {
+        console.error(`[global]: config file "${nconf_config}" does not exist. exiting.`);
+        process.exit(1);
+    }
     nconf.file(nconf_config);
 } else {
     nconf.use('memory');
