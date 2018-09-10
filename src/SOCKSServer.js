@@ -15,7 +15,7 @@ class SOCKSServer extends Server{
 		});
 	}
 
-	constructor(tor_pool, logger) {
+	constructor(tor_pool, logger, proxy_by_name) {
 		let handleConnection = (info, accept, deny) => {
 			let inbound_socket = accept(true);
 			var outbound_socket;
@@ -81,8 +81,19 @@ class SOCKSServer extends Server{
 		super(handleConnection);
 
 		this.logger = logger || require('./winston-silent-logger');;
+		if (!proxy_by_name) {
+			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned off`);
+			let auth = socks.auth.None();
+		} else {
+			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned on`);
+			let auth = socks.auth.UserPassword(
+				(username, password, cb) => {
+					
+				}
+			);
+		}
 
-		this.useAuth(socks.auth.None());
+		this.useAuth(auth);
 	}
 };
 
