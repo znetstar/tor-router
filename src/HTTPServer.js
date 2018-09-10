@@ -4,7 +4,7 @@ const { Server } = http;
 
 const Promise = require('bluebird');
 const socks = require('socksv5');
-const SocksProxyAgent = require('socks-proxy-agent');
+const ProxyAgent = require('proxy-agent');
 
 const TOR_ROUTER_PROXY_AGENT = 'tor-router';
 
@@ -21,8 +21,57 @@ class HTTPServer extends Server {
 		});
 	}
 
-	constructor(tor_pool, logger) {
+	authenticate_user_http(req, res) {
+		return this.authenticate_user(req, () => {
+			res.writeHead(407, { 'Proxy-Authenticate': `Basic realm="Name of instance to route to"` });
+			res.end();
+			return false;
+		})
+	}
+
+	authenticate_user_connect(req, socket) {
+		return this.authenticate_user(req, () => {
+			socket.end();
+			return false;
+		})
+	}
+
+	authenticate_user(req, deny) {
+		if (!this.proxy_by_name)
+			return true;
+		
+		let deny_un = this.proxy_by_name.deny_unidentified_users;
+		
+		let header = req.headers['authorization'] || req.headers['proxy-authorization'];
+		if (!header && deny_un) return deny();
+		else if (!header) return true;
+
+		let token = header.split(/\s+/).pop();
+		if (!token && deny_un) return deny();
+		else if (!token) return true;
+
+		let buf = new Buffer.from(token, 'base64').toString();
+		let username = buf.split(/:/).shift();
+		if ( !username && deny_un ) return deny();
+		else if (!username) return true;
+
+		this.logger.verbose(`[http]: connected attempted to instance "${username}"`);
+
+		let instance = this.tor_pool.instance_by_name(username);
+		
+		if (!instance) return deny();
+		req.instance = instance;
+
+		return true;
+	}
+
+	constructor(tor_pool, logger, proxy_by_name) {
 		let handle_http_connections = (req, res) => {
+			if (!this.authenticate_user_http(req, res))
+				return;
+			
+			let { instance } = req;
+			
 			let url = URL.parse(req.url); 
 			url.port = url.port || 80;
 
@@ -52,7 +101,7 @@ class HTTPServer extends Server {
 					port: url.port,
 					path: url.path,
 					headers: req.headers,
-					agent: new SocksProxyAgent(`socks://127.0.0.1:${socks_port}`)
+					agent: new ProxyAgent(`socks://127.0.0.1:${socks_port}`)
 				}, (proxy_res) => {
 					proxy_res.on('data', (chunk) => {
 						res.write(chunk);
@@ -83,8 +132,17 @@ class HTTPServer extends Server {
 					proxy_req.end();
 
 			};
-
-			if (tor_pool.instances.length) {
+			
+			if (instance) {
+				if (instance.ready) {
+					connect(instance);
+				}
+				else {
+					this.logger.debug(`[socks]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
+					instance.once('ready', (() => connect(instance)));
+				}
+			}
+			else if (this.tor_pool.instances.length) {
 				connect(tor_pool.next());
 			} else {
 				this.logger.debug(`[http-proxy]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
@@ -93,6 +151,11 @@ class HTTPServer extends Server {
 		};
 
 		let handle_connect_connections = (req, inbound_socket, head) => {
+			if (!this.authenticate_user_connect(req, inbound_socket))
+				return;
+			
+			let { instance } = req;
+
 			let hostname = req.url.split(':').shift();
 			let port = Number(req.url.split(':').pop());
 
@@ -135,11 +198,21 @@ class HTTPServer extends Server {
 					inbound_socket.pipe(outbound_socket);
 				});
 			};
-			if (tor_pool.instances.length) {
-				connect(tor_pool.next());
+
+			if (instance) {
+				if (instance.ready) {
+					connect(instance);
+				}
+				else {
+					this.logger.debug(`[socks]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
+					instance.once('ready', (() => connect(instance)));
+				}
+			}
+			else if (this.tor_pool.instances.length) {
+				connect(this.tor_pool.next());
 			} else {
 				this.logger.debug(`[http-connect]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
-				tor_pool.once('instance_created', connect);
+				this.tor_pool.once('instance_created', connect);
 			}
 		};
 
@@ -148,6 +221,7 @@ class HTTPServer extends Server {
 		
 		this.logger = logger || require('./winston-silent-logger');
 		this.tor_pool = tor_pool;
+		this.proxy_by_name = proxy_by_name;
 	}
 };
 

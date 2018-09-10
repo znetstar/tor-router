@@ -64,6 +64,8 @@ class TorProcess extends EventEmitter {
 		return this._controller || null;
 	}
 
+	get ready() { return this._ready; }
+
 	/* Passthrough to granax */
 
 	async new_identity() {
@@ -133,7 +135,7 @@ class TorProcess extends EventEmitter {
 		});
 
 		this.once('ready', () => {
-			this.ready = true;
+			this._ready = true;
 			this.logger.info(`[tor-${this.instance_name}]: tor is ready`);
 		});
 

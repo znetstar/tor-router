@@ -8,6 +8,8 @@ const env_whitelist = [ "CONTROL_HOST",
 						'PARENT_DATA_DIRECTORIES', 
 						'LOAD_BALANCE_METHOD', 
 						"WEBSOCKET_CONTROL_PORT",
+						"PROXY_BY_NAME",
+						"DENY_UNIDENTIFIED_USERS",
 						"controlHost", 
 						"torPath", 
 						"instances", 
@@ -17,7 +19,9 @@ const env_whitelist = [ "CONTROL_HOST",
 						"logLevel", 
 						'parentDataDirectories', 
 						'loadBalanceMethod',
-						"websocketControlPort"
+						"websocketControlPort",
+						"proxyByName",
+						"denyUnidentifedUsers"
 					];
 
 module.exports = (nconf) => {

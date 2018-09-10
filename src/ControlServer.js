@@ -144,14 +144,14 @@ class ControlServer {
 	}
 
 	async createSOCKSServer(port, hostname) {
-		this.socksServer = new SOCKSServer(this.torPool, this.logger);
+		this.socksServer = new SOCKSServer(this.torPool, this.logger, (this.nconf.get('proxyByName') ? { deny_unidentified_users: this.nconf.get('denyUnidentifedUsers') } : ""));
 		await this.socksServer.listen(port || default_ports.socks, hostname);
 		this.logger.info(`[socks]: listening on socks5://${hostname}:${port}`);
 		this.socksServer;
 	}
 
 	async createHTTPServer(port, hostname) {
-		this.httpServer = new HTTPServer(this.torPool, this.logger);
+		this.httpServer = new HTTPServer(this.torPool, this.logger, (this.nconf.get('proxyByName') ? { deny_unidentified_users: this.nconf.get('denyUnidentifedUsers') } : ""));
 		await this.httpServer.listen(port || default_ports.http, hostname);
 		this.logger.info(`[http]: listening on http://${hostname}:${port}`);
 		this.httpServer;

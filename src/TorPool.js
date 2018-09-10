@@ -124,11 +124,11 @@ class TorPool extends EventEmitter {
 	}
 
 	instance_by_name(name) {
-		return this.instances.filter((i) => i.definition.Name === name)[0];
+		return this._instances.filter((i) => i.definition.Name === name)[0];
 	}
 
 	instance_at(index) {
-		return this.instances[index];
+		return this._instances[index];
 	}
 
 	async remove(instances) {

@@ -9,6 +9,8 @@ module.exports = {
 	"socksHost": null,
 	"dnsHost": null,
 	"httpHost": null,
+	"proxyByName": true,
+	"denyUnidentifedUsers": false,
 	"logLevel": "info",
 	"loadBalanceMethod": "round_robin",
 	"torConfig": {

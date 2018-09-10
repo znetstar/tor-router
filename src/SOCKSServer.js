@@ -15,10 +15,35 @@ class SOCKSServer extends Server{
 		});
 	}
 
+	authenticate_user(username, password, callback) {
+		let deny_un = this.proxy_by_name.deny_unidentifed_users;
+
+		// No username and deny unindentifed then deny
+		if (!username && deny_un) callback(false);
+		// Otherwise if there is no username allow
+		else if (!username) callback(true);
+		
+		this.logger.verbose(`[socks]: connected attempted to instance "${username}"`);
+
+		let instance = this.tor_pool.instance_by_name(username);
+
+		// If a username is specified but no instances match that username deny
+		if (!instance) 
+			return callback(false);
+
+		// Otherwise allow
+		callback(true, instance);
+	}
+
 	constructor(tor_pool, logger, proxy_by_name) {
 		let handleConnection = (info, accept, deny) => {
 			let inbound_socket = accept(true);
-			var outbound_socket;
+			let instance;
+
+			if (inbound_socket.user)
+				instance = inbound_socket.user;
+
+			let outbound_socket;
 			let buffer = [];
 
 			let onInboundData = (data) => buffer.push(data)
@@ -70,27 +95,37 @@ class SOCKSServer extends Server{
 					}
 				});
 			};
-			if (tor_pool.instances.length) {
-				connect(tor_pool.next());
+			
+			if (instance) {
+				if (instance.ready) {
+					connect(instance);
+				}
+				else {
+					this.logger.debug(`[socks]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
+					instance.once('ready', (() => connect(instance)));
+				}
+			}
+			else if (this.tor_pool.instances.length) {
+				connect(this.tor_pool.next());
 			} else {
 				this.logger.debug(`[socks]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
-				tor_pool.once('instance_created', connect);
+				this.tor_pool.once('instance_created', connect);
 			}
 		};
 
 		super(handleConnection);
 
-		this.logger = logger || require('./winston-silent-logger');;
+		this.logger = logger || require('./winston-silent-logger');
+		this.tor_pool = tor_pool;
+		this.proxy_by_name = proxy_by_name;
+
+		let auth = socks.auth.None();
+		
 		if (!proxy_by_name) {
 			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned off`);
-			let auth = socks.auth.None();
 		} else {
 			this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned on`);
-			let auth = socks.auth.UserPassword(
-				(username, password, cb) => {
-					
-				}
-			);
+			auth = socks.auth.UserPassword(this.authenticate_user);
 		}
 
 		this.useAuth(auth);

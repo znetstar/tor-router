@@ -17,7 +17,6 @@
   "devDependencies": {
     "chai": "^4.1.2",
     "mocha": "^5.2.0",
-    "proxy-agent": "^3.0.1",
     "request": "^2.79.0",
     "request-promise": "^4.2.2"
   },
@@ -37,6 +36,7 @@
     "socksv5": "git+https://github.com/znetstar/socksv5.git#431e541390314adbbe765650d8d810ec1df38d8a",
     "temp": "^0.8.3",
     "winston": "^3.0.0-rc5",
-    "yargs": "^11.0.0"
+    "yargs": "^11.0.0",
+    "proxy-agent": "^3.0.1"
   }
 }

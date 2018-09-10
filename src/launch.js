@@ -177,6 +177,11 @@ let argv_config =
             alias: "torPath",
             describe: "Provide the path for the Tor executable that will be used",
             demand: false
+        },
+        n: {
+            alias: 'proxyByName',
+            describe: 'Allow connecting to a specific instance identified by the username field when connecting to a proxy',
+            demand: false
         }
     });
 
