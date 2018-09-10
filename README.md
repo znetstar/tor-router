@@ -26,20 +26,26 @@ To start run: `docker run --rm -it -p 9050:9050 znetstar/tor-router`
 
 The following command line switches and their environment variable equivalents are available for use:
 
-|Command line switch|Environment Variable|Description|
-|-------------------|--------------------|-----------|
-|-f, --config       |                    |Path to a JSON configuration file to use|
-|-c, --controlPort	|CONTROL_PORT        |Port the control server will bind to (see below)|
-|-j, --instances    |INSTANCES           |Number of Tor instances to spawn|
-|-s, --socksPort    |SOCKS_PORT			 |Port the SOCKS proxy will bind to|
-|-d, --dnsPort		|DNS_PORT			 |Port the DNS proxy will bind to|
-|-h, --httpPort     |HTTP_PORT			 |Port the HTTP proxy will bind to|
-|-l, --logLevel		|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
-|-p, --parentDataDirectory|PARENT_DATA_DIRECTORY      |Parent directory that will contain the data directories for the instances|
-|-b, --loadBalanceMethod|LOAD_BALANCE_METHOD          |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".|
-|-t, --torPath|TOR_PATH|Provide the path for the Tor executable that will be used| 
+If just a port number is passed in place of a host, it will bind to all interfaces.
 
-For example: `tor-router -j 3 -s 9050` would start the proxy with 3 tor instances and listen for SOCKS connections on 9050.
+|Command line switch|Environment Variable|Description|
+|---------------------------|--------------------|-----------|
+|-f, --config       		|                    |Path to a JSON configuration file to use|
+|-c, --controlHost			|CONTROL_HOST        |Host the control server will bind to and listen for TCP traffic (see below)|
+|-w, --websocketControlHost	|WEBSOCKET_CONTROL_HOST        |Host the control server will bind to and listen for WebSocket traffic|
+|-j, --instances    		|INSTANCES           |Number of Tor instances to spawn|
+|-s, --socksHost    		|SOCKS_HOST 		 |Host the SOCKS proxy will bind to|
+|-d, --dnsHost				|DNS_HOST			 |Host the DNS proxy will bind to|
+|-h, --httpHost     		|HTTP_HOST			 |Host the HTTP proxy will bind to|
+|-l, --logLevel				|LOG_LEVEL			 |Log level (defaults to "info") set to "null" to disable logging. To see a log of all network traffic set logLevel to "verbose"|
+|-p, --parentDataDirectory	|PARENT_DATA_DIRECTORY|Parent directory that will contain the data directories for the instances|
+|-b, --loadBalanceMethod	|LOAD_BALANCE_METHOD |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".	|
+|-t, --torPath				|TOR_PATH			|Provide the path for the Tor executable that will be used| 
+|-n, --proxyByName			|PROXY_BY_NAME		|Controls how authenticated requests will be handled. Can be set to "individual", "groups" or false to disable|
+
+A full list of all available configuration options and their defaults can be found in [default_config.js](https://github.com/znetstar/tor-router/blob/master/src/default_config.js)
+
+For example: `tor-router -j 3 -s 127.0.0.1:9050` would start the proxy with 3 tor instances and listen for SOCKS connections on localhost:9050.
 
 ## Testing
 

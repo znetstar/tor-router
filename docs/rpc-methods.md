@@ -16,7 +16,7 @@ Returns information on an instance identified by index
 
 ## createInstances(Array or Integer)
 
-If passed an Integer, creates thats many Tor instances. An array can also be passed describing the names, weights and configurations of prospective instances. :
+If passed an Integer, creates that many Tor instances. An array can also be passed describing the names, weights and configurations of prospective instances. :
 
 ```
 var rpcRequest = {
