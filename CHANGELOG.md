@@ -3,11 +3,13 @@
 ## [4.0.0] - 2018-09-09
 
 ### Added
-- All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which returns a Promise that will resolve when the server is listening.
+- The control server will accept WebSocket connections if the `--websocketControlHost` or `-w` argument is set. If the argument is used without a hostname it will default to 9078 on all interfaces.
+- All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which takes a port and optionally, a host returns a Promise that will resolve when the server is listening.
 
 ### Changes
+- All "Port" config options (e.g. socksPort) have been replaced with "Host", and can take a full host (e.g. 127.0.0.1:9050) for its value. This allows you to bind Tor Router to a specific hostname. If just a port is given it will bind to all interfaces.
 - All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await to increase readability.
-- The `logger` argument to the constructor's of all classes is now optional
+- The `logger` argument to the constructor of all classes is now optional
 - The `Config` property of instance definitions will now inherit from `TorPool.default_tor_config`.
 - The mocha test has been split into individual files all under `test/`
 

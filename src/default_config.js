@@ -3,11 +3,12 @@ const temp = require('temp');
 const path = require('path');
 temp.track();
 module.exports = {
-	"controlPort": 9077,
+	"controlHost": 9077,
+	"websocketControlHost": null,
 	"parentDataDirectory": temp.mkdirSync(),
-	"socksPort": null,
-	"dnsPort": null,
-	"httpPort": null,
+	"socksHost": null,
+	"dnsHost": null,
+	"httpHost": null,
 	"logLevel": "info",
 	"loadBalanceMethod": "round_robin",
 	"torConfig": {

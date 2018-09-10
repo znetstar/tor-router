@@ -1,21 +1,23 @@
-const env_whitelist = [ "CONTROL_PORT", 
+const env_whitelist = [ "CONTROL_HOST", 
 						"TOR_PATH", 
 						"INSTANCES", 
-						"SOCKS_PORT", 
-						"DNS_PORT", 
-						"HTTP_PORT", 
+						"SOCKS_HOST", 
+						"DNS_HOST", 
+						"HTTP_HOST", 
 						"LOG_LEVEL", 
 						'PARENT_DATA_DIRECTORIES', 
 						'LOAD_BALANCE_METHOD', 
-						"controlPort", 
+						"WEBSOCKET_CONTROL_PORT",
+						"controlHost", 
 						"torPath", 
 						"instances", 
-						"socksPort", 
-						"dnsPort", 
-						"httpPort", 
+						"socksHost", 
+						"dnsHost", 
+						"httpHost", 
 						"logLevel", 
 						'parentDataDirectories', 
-						'loadBalanceMethod'
+						'loadBalanceMethod',
+						"websocketControlPort"
 					];
 
 module.exports = (nconf) => {

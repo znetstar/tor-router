@@ -6,48 +6,72 @@ const winston = require('winston')
 const Promise = require('bluebird');
 
 const { ControlServer } = require('./');
+const default_ports = require('./default_ports');
 
 const package_json = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, 'utf8'));
 
+function extractHost (host) {
+    if (typeof(host) === 'number')
+        return { hostname: (typeof(default_ports.default_host) === 'string' ? default_ports.default_host : ''), port: host };
+    else if (typeof(host) === 'string' && host.indexOf(':') !== -1)
+        return { hostname: host.split(':').shift(), port: Number(host.split(':').pop()) };
+    else
+        return null;
+}
+
+function assembleHost(host) {
+    return `${typeof(host.hostname) === 'string' ? host.hostname : '' }:${host.port}`;
+}
+
 async function main(nconf, logger) {
     let instances = nconf.get('instances');
-    let socks_port = nconf.get('socksPort');
-    let dns_port = nconf.get('dnsPort');
-    let http_port = nconf.get('httpPort');
-    let control_port = nconf.get('controlPort');
+    let socks_host = typeof(nconf.get('socksHost')) !== 'boolean' ? extractHost(nconf.get('socksHost')) : nconf.get('socksHost');
+    let dns_host  = typeof(nconf.get('dnsHost')) !== 'boolean' ? extractHost(nconf.get('dnsHost')) : nconf.get('dnsHost');
+    let http_host = typeof(nconf.get('httpHost')) !== 'boolean' ? extractHost(nconf.get('httpHost')) : nconf.get('httpHost');
+    let control_host = typeof(nconf.get('controlHost')) !== 'boolean' ? extractHost(nconf.get('controlHost')) : nconf.get('controlHost');
+    let control_host_ws = typeof(nconf.get('websocketControlHost')) !== 'boolean' ? extractHost(nconf.get('websocketControlHost')) : nconf.get('websocketControlHost');
 
-    if (typeof(control_port) === 'boolean') {
-        control_port = 9077;
-        nconf.set('controlPort', 9077);
+    if (typeof(control_host) === 'boolean') {
+        control_host = extractHost(9077);
+        nconf.set('controlHost', assembleHost(control_port));
+    }
+
+    if (typeof(control_host_ws) === 'boolean') {
+        control_host_ws = extractHost(9078);
+        nconf.set('websocketControlPort', assembleHost(control_host_ws));
     }
 
     let control = new ControlServer(logger, nconf);
 
     try {
-        await control.listen(control_port);
+        await control.listenTcp(control_host.port, control_host.hostname);
 
-        if (socks_port) {
-            if (typeof(socks_port) === 'boolean') {
-                socks_port = 9050;
-                nconf.set('socksPort', socks_port);
-            }
-            control.createSOCKSServer(socks_port);
+        if (control_host_ws) {
+            control.listenWs(control_host_ws.port, control_host_ws.hostname);
         }
 
-        if (http_port) {
-            if (typeof(http_port) === 'boolean') {
-                http_port = 9080;
-                nconf.set('httpPort', http_port);
+        if (socks_host) {
+            if (typeof(socks_host) === 'boolean') {
+                socks_host = extractHost(default_ports.socks);
+                nconf.set('socksHost', assembleHost(socks_host));
             }
-            control.createHTTPServer(http_port);
+            control.createSOCKSServer(socks_host.port, socks_host.hostname);
         }
 
-        if (dns_port) {
-            if (typeof(dns_port) === 'boolean') {
-                dns_port = 9053;
-                nconf.set('dnsPort', dns_port);
+        if (http_host) {
+            if (typeof(http_host) === 'boolean') {
+                http_host = extractHost(default_ports.http);
+                nconf.set('httpHost', assembleHost(http_host));
             }
-            control.createDNSServer(dns_port);
+            control.createHTTPServer(http_host.port, http_host.hostname);
+        }
+
+        if (dns_host) {
+            if (typeof(dns_host) === 'boolean') {
+                dns_host = extractHost(default_ports.dns);
+                nconf.set('dnsPort', assembleHost(dns_host));
+            }
+            control.createDNSServer(dns_host.port, dns_host.hostname);
         }
 
         if (instances) {
@@ -56,7 +80,6 @@ async function main(nconf, logger) {
             
             logger.info('[tor]: tor started');
         }
-        logger.info(`[control]: control Server listening on ${control_port}`);
     } catch (error) {
         logger.error(`[global]: error starting application: ${error.stack}`);
         process.exit(1);
@@ -102,10 +125,15 @@ let argv_config =
             demand: false
         },
         c: {
-            alias: 'controlPort',
-            describe: 'Port the control server will bind to [default: 9077]',
+            alias: 'controlHost',
+            describe: `Host the control server will bind to, handling TCP connections [default: ${default_ports.default_host}:9077]`,
             demand: false
             // ,default: 9077
+        },
+        w: {
+            alias: 'websocketControlHost',
+            describe: 'Host the control server will bind to, handling WebSocket connections. If no hostname is specified will bind to localhost',
+            demand: false
         },
         j: {
             alias: 'instances',
@@ -114,19 +142,19 @@ let argv_config =
             // ,default: 1
         },
         s: {
-            alias: 'socksPort',
-            describe: 'Port the SOCKS5 Proxy server will bind to',
+            alias: 'socksHost',
+            describe: 'Host the SOCKS5 Proxy server will bind to. If no hostname is specified will bind to localhost',
             demand: false,
-            // ,default: 9050
+            // ,default: default_ports.socks
         },
         d: {
-            alias: 'dnsPort',
-            describe: 'Port the DNS Proxy server will bind to',
+            alias: 'dnsHost',
+            describe: 'Host the DNS Proxy server will bind to. If no hostname is specified will bind to localhost',
             demand: false
         },
         h: {
-            alias: 'httpPort',
-            describe: 'Port the HTTP Proxy server will bind to',
+            alias: 'httpHost',
+            describe: 'Host the HTTP Proxy server will bind to. If no hostname is specified will bind to localhost',
             demand: false
         },
         l: {

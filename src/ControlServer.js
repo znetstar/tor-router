@@ -1,8 +1,10 @@
-const TorPool = require('./TorPool');
-const SOCKSServer = require('./SOCKSServer');
-const DNSServer = require('./DNSServer');
-const HTTPServer = require('./HTTPServer');
 const rpc = require('jrpc2');
+
+const SOCKSServer = require('./SOCKSServer');
+const HTTPServer = require('./HTTPServer');
+const DNSServer = require('./DNSServer');
+const TorPool = require('./TorPool');
+const default_ports = require('./default_ports');
 
 class ControlServer {
 	constructor(logger, nconf) {
@@ -118,10 +120,19 @@ class ControlServer {
 		server.expose('signalInstanceByName', this.torPool.signal_by_name.bind(this.torPool));
 	}
 
-	async listen(port) {  
-		this.tcpTransport = new rpc.tcpTransport({ port });
+	async listenTcp(port, hostname) {  
+		this.tcpTransport = new rpc.tcpTransport({ port, hostname });
 		this.tcpTransport.listen(this.server);
+        this.logger.info(`[control]: control server listening on tcp://${hostname}:${port}`);
 	}
+
+	async listenWs(port, hostname) {
+		this.wsTransport = new rpc.wsTransport({ port, hostname });
+		this.wsTransport.listen(this.server);
+		this.logger.info(`[control]: control server listening on ws://${hostname}:${port}`);
+	}
+
+	async listen(port) { return await this.listenTcp(port); }
 
 	close() { 
 		return this.tcpTransport.tcpServer.close();
@@ -132,24 +143,24 @@ class ControlServer {
 		return this.torPool;
 	}
 
-	async createSOCKSServer(port) {
+	async createSOCKSServer(port, hostname) {
 		this.socksServer = new SOCKSServer(this.torPool, this.logger);
-		await this.socksServer.listen(port || 9050);
-		this.logger.info(`[socks]: Listening on ${port}`);
+		await this.socksServer.listen(port || default_ports.socks, hostname);
+		this.logger.info(`[socks]: listening on socks5://${hostname}:${port}`);
 		this.socksServer;
 	}
 
-	async createHTTPServer(port) {
+	async createHTTPServer(port, hostname) {
 		this.httpServer = new HTTPServer(this.torPool, this.logger);
-		await this.httpServer.listen(port || 9080);
-		this.logger.info(`[http]: Listening on ${port}`);
+		await this.httpServer.listen(port || default_ports.http, hostname);
+		this.logger.info(`[http]: listening on http://${hostname}:${port}`);
 		this.httpServer;
 	}
 
-	async createDNSServer(port) {
+	async createDNSServer(port, hostname) {
 		this.dnsServer = new DNSServer(this.torPool, this.nconf.get('dns:options'), this.nconf.get('dns:timeout'), this.logger);
-		await this.dnsServer.serve(port || 9053);
-		this.logger.info(`[dns]: Listening on ${port}`);
+		await this.dnsServer.serve(port || default_ports.dns, hostname);
+		this.logger.info(`[dns]: listening on dns://${hostname}:${port}`);
 		this.dnsServer;
 	}
 };
