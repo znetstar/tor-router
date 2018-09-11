@@ -32,7 +32,7 @@ class TorProcess extends EventEmitter {
 		this.tor_path = tor_path;
 		this.granax_options = granax_options;
 		this.control_password = crypto.randomBytes(128).toString('base64');
-		this._id = nanoid();
+		this._id = nanoid(12);
 
 		this.tor_config.DataDirectory = this.tor_config.DataDirectory || temp.mkdirSync();
 	}
@@ -43,7 +43,7 @@ class TorProcess extends EventEmitter {
 				resolve();
 			});
 		});
-		
+
 		this.process.kill('SIGINT');
 		
 		await p;
