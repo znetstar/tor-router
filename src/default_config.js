@@ -9,7 +9,7 @@ module.exports = {
 	"socksHost": null,
 	"dnsHost": null,
 	"httpHost": null,
-	"proxyByName": 'individual',
+	"proxyByName": false,
 	"denyUnidentifedUsers": false,
 	"logLevel": "info",
 	"loadBalanceMethod": "round_robin",

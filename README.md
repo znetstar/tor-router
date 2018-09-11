@@ -100,7 +100,7 @@ Instances can optionally be assigned name and a weight. If the `loadBalanceMetho
 }
 ```
 
-If the `proxyByName` (argument `-n`) configuration property is set to 'individual', which it is by default, you can use the instance name to send requests to a specific instance. The username field in the proxy URL will identify the instance. For example, using `http://instance-1:@localhost:9080` when connecting to the HTTP Proxy would route requests to "instance-1". 
+If the `proxyByName` (argument `-n`) configuration property is set to "individual" or true you can use the instance name to send requests to a specific instance. The username field in the proxy URL will identify the instance. For example, using `http://instance-1:@localhost:9080` when connecting to the HTTP Proxy would route requests to "instance-1". 
 
 This feature works on the HTTP Proxy as well as the SOCKS Proxy, but not the DNS proxy since DNS lacks authentication.
 
