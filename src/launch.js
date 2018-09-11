@@ -31,6 +31,9 @@ async function main(nconf, logger) {
     let control_host = typeof(nconf.get('controlHost')) !== 'boolean' ? extractHost(nconf.get('controlHost')) : nconf.get('controlHost');
     let control_host_ws = typeof(nconf.get('websocketControlHost')) !== 'boolean' ? extractHost(nconf.get('websocketControlHost')) : nconf.get('websocketControlHost');
 
+    if (nconf.get('proxyByName') && nconf.get('proxyByName') === true)
+        nconf.set('proxyByName', 'individual');
+
     if (typeof(control_host) === 'boolean') {
         control_host = extractHost(9077);
         nconf.set('controlHost', assembleHost(control_port));
@@ -75,9 +78,10 @@ async function main(nconf, logger) {
         }
 
         if (instances) {
-            logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instance(s)...`)
+            logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instance(s)...`);
+
             await control.torPool.create(instances);
-            
+
             logger.info('[tor]: tor started');
         }
     } catch (error) {

@@ -20,16 +20,19 @@ Promise.promisifyAll(fs);
 temp.track();
 
 class TorProcess extends EventEmitter {
-	constructor(tor_path, config, granax_options, logger) {
+	constructor(tor_path, definition, granax_options, logger) {
 		super();
 		this.logger = logger || require('./winston-silent-logger');
+
+		definition.Group = definition.Group ? [].concat(definition.Group) : [];
+
+		this._definition = definition;
+
 		this.tor_path = tor_path;
 		this.granax_options = granax_options;
 		this.control_password = crypto.randomBytes(128).toString('base64');
 
-		config.DataDirectory = config.DataDirectory || temp.mkdirSync();
-
-		this.tor_config = config;
+		this.tor_config.DataDirectory = this.tor_config.DataDirectory || temp.mkdirSync();
 	}
 
 	async exit() {
@@ -43,10 +46,17 @@ class TorProcess extends EventEmitter {
 		await p;
 	}
 
+	get instance_group() {
+		return (this.definition && this.definition.Group) || null;
+	}
 
 	get instance_name() {
 		return (this.definition && this.definition.Name) || this.process.pid;
 	}
+
+	get definition() { return this._definition; }
+
+	get tor_config() { return this.definition.Config; }
 
 	get dns_port() {
 		return this._dns_port || null;
@@ -109,7 +119,7 @@ class TorProcess extends EventEmitter {
 			HashedControlPassword: shell.exec(`${this.tor_path} --quiet --hash-password "${this.control_password}"`, { async: false, silent: true }).stdout.trim()
 		};
 
-		let config = _.extend(_.extend({}, this.tor_config), options);
+		let config = _.extend(_.cloneDeep(this.tor_config), options);
 		let text = Object.keys(config).map((key) => `${key} ${config[key]}`).join(os.EOL);
 
 		let configFile = await temp.openAsync('tor-router');

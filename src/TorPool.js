@@ -45,6 +45,100 @@ class TorPool extends EventEmitter {
 		this.granax_options = granax_options;
 	}
 
+	get group_names() {
+		return _.uniq(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean)));
+	}
+	
+	add_instance_to_group(group, instance) {
+		instance.definition.Group = _.union(instance.instance_group, [group]);
+	}
+
+	add_instance_to_group_by_name(group, instance_name) {
+		let instance = this.instance_by_name(instance_name);
+
+		if (!instance) throw new Error(`Instance "${instance_name}" not found`);
+
+		return this.add_instance_to_group(group, instance);
+	}
+
+	add_instance_to_group_at(group, instance_index) {
+		let instance = this.instance_at(instance_index);
+
+		if (!instance) throw new Error(`Instance at "${instance_index}" not found`);
+
+		return this.add_instance_to_group(group, instance);
+	}
+
+	remove_instance_from_group(group, instance) {
+		_.remove(instance.definition.Group, (g) => g === group);
+	}
+
+	remove_instance_from_group_by_name(group, instance_name) {
+		let instance = this.instance_by_name(instance_name);
+
+		if (!instance) throw new Error(`Instance "${instance_name}" not found`);
+
+		return this.remove_instance_from_group(group, instance);
+	}
+
+	remove_instance_from_group_at(group, instance_index) {
+		let instance = this.instance_at(instance_index);
+
+		if (!instance) throw new Error(`Instance at "${instance_index}" not found`);
+
+		return this.remove_instance_from_group(group, instance);
+	}
+
+	get groups() {
+		let groupHandler = {
+			get: (instances, prop) => {
+				if (!Number.isNaN(Number(prop)))
+					return instances[prop];
+
+				let { group_name } = instances;
+				
+				if (prop === 'add') 
+					return (instance) => {
+						return this.add_instance_to_group(group_name, instance);
+					};
+				
+				if (prop === 'add_by_name') 
+					return this.add_instance_to_group_by_name.bind(this, group_name);
+
+				if (prop === 'remove')
+					return (instance) => {
+						return this.remove_instance_from_group(group_name, instance);
+					};
+			
+				if (prop === 'remove_by_name') 
+					return this.remove_instance_from_group_by_name.bind(this, group_name);
+				
+				if (prop === 'remove_at') 					
+					return (instance_index) => {
+						return this.remove_instance_from_group(group_name, instances[instance_index]);
+					};
+				
+				return void(0);
+			}
+		};
+
+		let groupsHandler = {
+			get: (group_names, prop) => {
+				let instances_in_group = [];
+
+				if (group_names.indexOf(prop) !== -1) {
+					instances_in_group = this.instances.filter((instance) => instance.instance_group.indexOf(prop) !== -1);
+				}
+
+				instances_in_group.group_name = prop;
+
+				return new Proxy(instances_in_group, groupHandler);
+			}
+		};
+
+		return new Proxy(this.group_names, groupsHandler);
+	}
+
 	get default_tor_config() {
 		if (typeof(this._default_tor_config) === 'function')
 			return this._default_tor_config();
@@ -77,7 +171,7 @@ class TorPool extends EventEmitter {
 	}
 
 	get instances() { 
-		return this._instances.slice(0).filter((tor) => tor.ready);
+		return this._instances.slice(0);
 	}
 
 	async create_instance(instance_definition) {
@@ -89,10 +183,9 @@ class TorPool extends EventEmitter {
 		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
 		
-		let instance = new TorProcess(this.tor_path, instance_definition.Config, this.granax_options, this.logger);
+		let instance = new TorProcess(this.tor_path, instance_definition, this.granax_options, this.logger);
 		
 		instance.id = instance_id;
-		instance.definition = instance_definition;
 		
 		await instance.create();
 		

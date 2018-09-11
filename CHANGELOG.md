@@ -14,6 +14,7 @@
 - The `Config` property of instance definitions will now inherit from `TorPool.default_tor_config`.
 - The mocha test has been split into individual files all under `test/`
 - DNS shows the source/destination hostname/port in logs instead of what the query was resolved to
+- `TorProcess` takes an instance definition as the second argument in its constructor.
 
 ### Removes
 - The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.
