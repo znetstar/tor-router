@@ -26,7 +26,39 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#createInstances(number_of_instances)', function () {
 		this.timeout(WAIT_FOR_CREATE*2);
 		it('should create an instance', async function () {
-			await rpcClient.invokeAsync('createInstances', [2]);		
+			await rpcClient.invokeAsync('createInstances', [{ Name: 'instance-1', Group: "foo" }]);		
+		});
+	});
+
+	describe('#queryInstanceNames()', function () {
+		it("should have an instance named \"instance-1\"", async function () {
+			let raw = await rpcClient.invokeAsync('queryInstanceNames', [ ]);
+
+			let instances = JSON.parse(raw).result;
+
+			assert.deepEqual(instances, [ 'instance-1' ]);
+		});
+	});
+
+	describe('#queryGroupNames()', function () {
+		it("should have a group named \"foo\"", async function () {
+			let raw = await rpcClient.invokeAsync('queryGroupNames', [ ]);
+
+			let groups = JSON.parse(raw).result;
+
+			assert.deepEqual(groups, [ 'foo' ]);
+		});
+	});
+
+	describe('#queryInstancesByGroup()', function () {
+		it("should return an instance named \"instance-1\"", async function () {
+			let raw = await rpcClient.invokeAsync('queryInstancesByGroup', [ 'foo' ]);
+
+			let instances = JSON.parse(raw).result;
+
+			assert.equal(instances.length, 1);
+			assert.ok(instances[0]);
+			assert.equal(instances[0].name, 'instance-1');
 		});
 	});
 
@@ -46,14 +78,15 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#addInstances(definitions)', function () {
 		this.timeout(WAIT_FOR_CREATE);
 		it("should add an instance based on a defintion", async function () {
-			var def = {
-				Name: 'instance-1'
+			let def = {
+				Name: 'instance-2',
+				Group: 'bar'
 			};
-			await rpcClient.invokeAsync('addInstances', [ [ def ] ]);
+			await rpcClient.invokeAsync('addInstances', [ def ]);
 		});
 
 		it("tor pool should now contain and instance that has the same name as the name specified in the defintion", function () {
-			assert.ok(rpcControlServer.torPool.instance_by_name('instance-1'));
+			assert.ok(rpcControlServer.torPool.instance_by_name('instance-2'));
 		});
 	});
 
@@ -79,6 +112,63 @@ describe('ControlServer - RPC Interface', function () {
 		});
 	});
 
+	describe('#addInstanceToGroupByName()', function () {
+		it(`should add "instance-1" to baz`, async function () {
+			await rpcClient.invokeAsync('addInstanceToGroupByName', [ 'baz', "instance-1" ]);
+		});
+
+		it('"instance-1" should be added to "baz"', function () {
+			assert.include(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+		});
+
+		after('remove from group', function () {
+			rpcControlServer.torPool.groups['baz'].remove_by_name('instance-1');
+		});
+	});
+
+	describe('#addInstanceToGroupAt()', function () {
+		it(`should add "instance-1" to baz`, async function () {
+			await rpcClient.invokeAsync('addInstanceToGroupAt', [ 'baz', 0 ]);
+		});
+
+		it('"instance-1" should be added to "baz"', function () {
+			assert.include(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+		});
+
+		after('remove from group', function () {
+			rpcControlServer.torPool.groups['baz'].remove_by_name('instance-1');
+		});
+	});
+
+	describe('#removeInstanceFromGroupByName()', function () {
+		before('add to group', function () {
+			rpcControlServer.torPool.groups['baz'].add_by_name('instance-1');
+		});
+
+		it(`should remove "instance-1" from baz`, async function () {
+			await rpcClient.invokeAsync('removeInstanceFromGroupByName', [ 'baz', "instance-1" ]);
+		});
+
+		it('"instance-1" should be remove from to "baz"', function () {
+			assert.notInclude(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+		});
+	});
+
+	describe('#removeInstanceFromGroupAt()', function () {
+		before('add to group', function () {
+			rpcControlServer.torPool.groups['baz'].add_by_name('instance-1');
+		});
+
+		it(`should remove "instance-1" from baz`, async function () {
+			await rpcClient.invokeAsync('removeInstanceFromGroupAt', [ 'baz', 0 ]);
+		});
+
+		it('"instance-1" should be remove from to "baz"', function () {
+			assert.notInclude(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+		});
+	});
+
+	
 	describe('#newIdentites()', function () {
 		this.timeout(3000);
 		it('should request new identities for all instances', async function () {
@@ -97,6 +187,13 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 		it('should request new identities for all instances', async function () {
 			await rpcClient.invokeAsync('newIdentityAt', [0]);		
+		});
+	});
+
+
+	describe('#newIdentitiesByGroup()', function () {
+		it(`should get new identites for all instances in group`, async function () {
+			await rpcClient.invokeAsync('newIdentitiesByGroup', [ 'foo' ]);
 		});
 	});
 
@@ -142,6 +239,22 @@ describe('ControlServer - RPC Interface', function () {
 			this.timeout(10000);
 			nconf.set('torConfig', {});
 			await rpcControlServer.torPool.remove_by_name('config-test');
+		});
+	});
+
+	describe('#setTorConfigByGroup()', function () {
+		it(`should set the config value on all instances`, async function () {
+			await rpcClient.invokeAsync('setTorConfigByGroup', [ 'foo', { 'ProtocolWarnings': 1 } ]);
+		});
+
+		it('all instances should have the config value set', async function () {
+			let values = _.flatten(await Promise.all(rpcControlServer.torPool.instances_by_group('foo').map((i) => i.get_config('ProtocolWarnings'))));
+
+			assert.isTrue(values.every((v) => v === "1"));
+		});
+
+		after('unset config values', async function () {
+			rpcControlServer.torPool.set_config_by_group('foo', 'ProtocolWarnings', 0);
 		});
 	});
 
@@ -295,6 +408,12 @@ describe('ControlServer - RPC Interface', function () {
 		});
 	});
 
+	describe('#signalInstancesByGroup()', function () {
+		it(`should get new identites for all instances in group`, async function () {
+			await rpcClient.invokeAsync('signalInstancesByGroup', [ 'foo', 'DEBUG' ]);
+		});
+	});
+
 	describe("#nextInstance()", function () {
 		this.timeout(3000);
 		let instance_name;
@@ -341,7 +460,6 @@ describe('ControlServer - RPC Interface', function () {
 
 		it('no instances should be present in the pool', function () {
 			assert.equal(rpcControlServer.torPool.instances.length, 0);
-			assert.notEqual(rpcControlServer.torPool.instances.length, instance_num);
 		});
 	});
 

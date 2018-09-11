@@ -23,8 +23,6 @@ const fs = require('fs');
 const { EventEmitter } = require('eventemitter3');
 const Promise = require("bluebird");
 const _ = require('lodash');
-
-const nanoid = require('nanoid');
 const WeightedList = require('js-weighted-list');
 
 const TorProcess = require('./TorProcess');
@@ -46,7 +44,7 @@ class TorPool extends EventEmitter {
 	}
 
 	get group_names() {
-		return new Set(_.uniq(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean))).sort());
+		return new Set(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean)));
 	}
 
 	instances_by_group(group_name) {
@@ -203,12 +201,9 @@ class TorPool extends EventEmitter {
 		
 		this._instances._weighted_list = void(0);
 		instance_definition.Config = _.extend(_.cloneDeep(this.default_tor_config), (instance_definition.Config || {}));
-		let instance_id = nanoid();
 		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
 		
 		let instance = new TorProcess(this.tor_path, instance_definition, this.granax_options, this.logger);
-		
-		instance.id = instance_id;
 		
 		await instance.create();
 		

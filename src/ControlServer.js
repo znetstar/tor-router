@@ -53,6 +53,12 @@ class ControlServer {
 			return instance_info(this.torPool.instance_at(index));	
 		}).bind(this));
 
+		server.expose('queryInstanceNames', (() => this.torPool.instance_names).bind(this));
+
+		server.expose('queryGroupNames', (() => Array.from(this.torPool.group_names)).bind(this));
+
+		server.expose('queryInstancesByGroup', ((group) => this.torPool.instances_by_group(group).map(instance_info)).bind(this));
+
 		server.expose('createInstances', (async (num) => {
 			let instances = await this.torPool.create(num);
 
@@ -77,6 +83,8 @@ class ControlServer {
 
 		server.expose('newIdentityByName', this.torPool.new_identity_by_name.bind(this.torPool));
 
+		server.expose('newIdentitiesByGroup', (async (group) => await this.torPool.new_identites_by_group(group)).bind(this));
+
 		server.expose('nextInstance', (async () => instance_info( await this.torPool.next() )).bind(this));
 
 		server.expose('closeInstances', (async () => this.torPool.exit()).bind(this));
@@ -94,6 +102,14 @@ class ControlServer {
 				let value = config[key];
 
 				return this.torPool.set_config_all(key, value);
+			}));
+		}).bind(this));
+
+		server.expose('setTorConfigByGroup', (async (group, config) => {
+			await Promise.all(Object.keys(config).map((key) => {
+				let value = config[key];
+
+				return this.torPool.set_config_by_group(group, key, value);
 			}));
 		}).bind(this));
 
@@ -118,6 +134,16 @@ class ControlServer {
 		server.expose('signalInstanceAt', this.torPool.signal_at.bind(this.torPool));
 
 		server.expose('signalInstanceByName', this.torPool.signal_by_name.bind(this.torPool));
+
+		server.expose('signalInstancesByGroup', (async (group, signal) => await this.torPool.signal_by_group(group, signal)).bind(this));
+
+		server.expose('addInstanceToGroupByName', ((group, instance_name) => this.torPool.add_instance_to_group_by_name(group, instance_name)).bind(this));
+		
+		server.expose('addInstanceToGroupAt', ((group, instance_index) => this.torPool.add_instance_to_group_at(group, instance_index)).bind(this));
+
+		server.expose('removeInstanceFromGroupByName', ((group, instance_name) => this.torPool.remove_instance_from_group_by_name(group, instance_name)).bind(this));
+		
+		server.expose('removeInstanceFromGroupAt', ((group, instance_index) => this.torPool.remove_instance_from_group_at(group, instance_index)).bind(this));
 	}
 
 	async listenTcp(port, hostname) {  

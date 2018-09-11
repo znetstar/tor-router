@@ -6,15 +6,43 @@ The following functions are available via the RPC
 
 Returns an array containing information on the instances currently running under the router.
 
-## queryInstanceByName(String)
+## queryInstanceByName(instance_name: String)
 
 Returns information on an instance identified by name
 
-## queryInstanceAt(Integer)
+## queryInstancesByGroup(instance_name: String)
 
-Returns information on an instance identified by index
+Returns an array containing information on the instances within a group.
 
-## createInstances(Array or Integer)
+## queryInstanceAt(instance_index: Integer)
+
+Returns information on an instance identified by index.
+
+## queryInstanceNames()
+
+Returns a list of all instance names.
+
+## queryGroupNames()
+
+Returns a list of all instance groups.
+
+## addInstanceToGroupByName(group: String, instance_name: String)
+
+Adds an instance, identified by name, to a group
+
+## addInstanceToGroupAt(group: String, instance_index: Integer)
+
+Adds an instance, identified by index, to a group
+
+## removeInstanceFromGroupByName(group: String, instance_name: String)
+
+Removes an instance, identified by name, from a group
+
+## removeInstanceFromGroupAt(group: String, instance_index: Integer)
+
+Removes an instance, identified by index, from a group
+
+## createInstances(instances: Array or Integer)
 
 If passed an Integer, creates that many Tor instances. An array can also be passed describing the names, weights and configurations of prospective instances. :
 
@@ -38,19 +66,19 @@ var rpcRequest = {
 
 Will wait until the Tor Instance has fully connected to the network before returning
 
-## addInstances(Array)
+## addInstances(instances: Array)
 
 Serves the same purpose as "createInstances" but only takes an Array
 
-## removeInstances(Integer)
+## removeInstances(instances: Integer)
 
 Removes a number of instances
 
-## removeInstanceAt(Integer)
+## removeInstanceAt(instance_index: Integer)
 
 Remove a specific instance from the pool by its index
 
-## removeInstanceByName(String)
+## removeInstanceByName(instance_name: String)
 
 Remove a specific instance from the pool by its name
 
@@ -58,13 +86,17 @@ Remove a specific instance from the pool by its name
 
 Get new identites for all instances
 
-## newIdentityAt(Integer)
+## newIdentityAt(instance_index: Integer)
 
 Get a new identity for a specific instance by its index
 
-## newIdentityByName(String)
+## newIdentityByName(instance_name: String)
 
 Get a new identity for a specific instance by its name
+
+## newIdentitiesByGroup(group: String)
+
+Get new identities for all instances in a group
 
 ## nextInstance()
 
@@ -74,15 +106,19 @@ Cycle to the next instance using the load balancing method
 
 Shutdown all Tor instances
 
-## setTorConfig(Object)
+## setTorConfig(config: Object)
 
-Applies the configuration to all active instances
+Apples the provided configuration to all instances using the control protocol. Changes will be applied immediately.
+
+## setTorConfigByGroup(group: String, config: Object)
+
+Apples the provided configuration to all instances in a group using the control protocol. Changes will be applied immediately.
 
 ## getDefaultTorConfig() 
 
 Retrieve the default Tor Config for all future instances
 
-## setDefaultTorConfig(Object)
+## setDefaultTorConfig(config: Object)
 
 Set the default Tor Config for all future instances
 
@@ -90,11 +126,11 @@ Set the default Tor Config for all future instances
 
 Get the current load balance method
 
-## setLoadBalanceMethod(String)
+## setLoadBalanceMethod(load_balance_method: String)
 
 Set the current load balance method
 
-## getInstanceConfigAt(Integer: index, String: keyword)
+## getInstanceConfigAt(instance_index: Integer, keyword: String)
 
 Retrieves the current value of an option set in the configuration by the index of the instance using the control protocol. 
 
@@ -111,28 +147,32 @@ var rpcRequest = {
 };
 ```
 
-## getInstanceConfigByName(String: name, String: keyword)
+## getInstanceConfigByName(name: String, keyword: String)
 
 Works the same way as `getInstanceConfigAt` except takes an instance name instead of an index
 
-## setInstanceConfigAt(Integer: index, String: keyword, String: value)
+## setInstanceConfigAt(index: Integer, keyword: String, value: String)
 
 Sets the value in the configuration of an instance using the control protocol. Changes will be applied immediately.
 
-## setInstanceConfigByName(Integer: index, String: keyword, String: value)
+## setInstanceConfigByName(index: Integer, keyword: String, value: String)
 
 Works the same way as `setInstanceConfigAt` except takes an instance name instead of an index
 
-## signalAllInstances(String)
+## signalAllInstances(signal: String)
 
 Sends a signal using the control protocol to all instances
 
 A list of all signals can be [found here](https://gitweb.torproject.org/torspec.git/tree/control-spec.txt)
 
-## signalInstanceAt(Integer: index, String: signal)
+## signalInstancesByGroup(group: String, signal: String)
+
+Sends a signal using the control protocol to all instances in a group
+
+## signalInstanceAt(index: Integer, signal: String)
 
 Sends a signal using the control protocol to an instance identified by its index
 
-## signalInstanceByName(String: name, String: signal)
+## signalInstanceByName(name: String, signal: String)
 
 Sends a signal using the control protocol to an instance identified by its name

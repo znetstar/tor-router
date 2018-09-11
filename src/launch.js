@@ -93,7 +93,7 @@ async function main(nconf, logger) {
         let thereWasAnExitError = false;
         let { handleError } = this;
         try {
-            await Promise.all(control.torPool.instances.map((instance) => instance.exit()));
+            await control.torPool.exit();
         } catch (exitError) {
             logger.error(`[global]: error closing tor instances: ${exitError.message}`);
             thereWasAnExitError = true;

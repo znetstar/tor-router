@@ -13,6 +13,7 @@ const getPort = require('get-port');
 const del = require('del');
 const temp = require('temp');
 const { TorController } = require('granax');
+const nanoid = require("nanoid");
 
 Promise.promisifyAll(temp);
 Promise.promisifyAll(fs);
@@ -31,6 +32,7 @@ class TorProcess extends EventEmitter {
 		this.tor_path = tor_path;
 		this.granax_options = granax_options;
 		this.control_password = crypto.randomBytes(128).toString('base64');
+		this._id = nanoid();
 
 		this.tor_config.DataDirectory = this.tor_config.DataDirectory || temp.mkdirSync();
 	}
@@ -41,17 +43,20 @@ class TorProcess extends EventEmitter {
 				resolve();
 			});
 		});
+		
 		this.process.kill('SIGINT');
 		
 		await p;
 	}
+
+	get id() { return this._id; }
 
 	get instance_group() {
 		return (this.definition && this.definition.Group) || null;
 	}
 
 	get instance_name() {
-		return (this.definition && this.definition.Name) || this.process.pid;
+		return (this.definition && this.definition.Name) || this.id;
 	}
 
 	get definition() { return this._definition; }

@@ -248,7 +248,7 @@ describe('TorPool', function () {
 
 			await torPool.remove_by_name('instance-3');
 
-			assert.notIncludeDeepOrderedMembers(torPool.instance_names, [ "instance-3" ]);
+			assert.notInclude(torPool.instance_names, "instance-3");
 		});
 
 		after('shutdown tor pool', async function () { await torPool.exit(); });
@@ -672,7 +672,7 @@ describe('TorPool', function () {
 		});
 
 		it('the instance should be no longer be in the group', function () {
-			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+			assert.notInclude(instance.instance_group, "foo");
 		});
 
 		after('shutdown tor pool', async function () { await tor_pool.exit(); });
@@ -693,7 +693,7 @@ describe('TorPool', function () {
 		});
 
 		it('the instance should no longer be in the group', function () {
-			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+			assert.notInclude(instance.instance_group, "foo");
 		});
 
 		after('shutdown tor pool', async function () { await tor_pool.exit(); });
@@ -714,7 +714,7 @@ describe('TorPool', function () {
 		});
 
 		it('the instance should no longer be in the group', function () {
-			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+			assert.notInclude(instance.instance_group, "foo");
 		});
 
 		after('shutdown tor pool', async function () { await tor_pool.exit(); });
