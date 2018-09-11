@@ -39,8 +39,6 @@ class HTTPServer extends Server {
 		if (!this.proxy_by_name)
 			return true;
 		
-		this.logger.verbose(`[http]: connected attempted to instance "${username}"`);
-		
 		let deny_un = this.proxy_by_name.deny_unidentified_users;
 		
 		let header = req.headers['authorization'] || req.headers['proxy-authorization'];
@@ -52,6 +50,9 @@ class HTTPServer extends Server {
 		else if (!token) return true;
 
 		let buf = new Buffer.from(token, 'base64').toString();
+		if ( !buf && deny_un ) return deny();
+		else if (!buf) return true;
+
 		let username = buf.split(/:/).shift();
 		if ( !username && deny_un ) return deny();
 		else if (!username) return true;

@@ -26,8 +26,6 @@ class SOCKSServer extends Server{
 
 	authenticate_user(username, password, callback) {
 		let deny_un = this.proxy_by_name.deny_unidentified_users;
-
-		this.logger.verbose(`[socks]: connected attempted to instance "${username}"`);
 		
 		// No username and deny unindentifed then deny
 		if (!username && deny_un) callback(false);

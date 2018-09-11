@@ -147,7 +147,6 @@ describe('HTTPServer', function () {
 
 				let request = require('request-promise').defaults({ proxy: `http://foo:@127.0.0.1:${httpPort}` });
 
-
 				let names_requested = [];
 
 				let connectionHandler = (instance, source) => {
@@ -180,7 +179,7 @@ describe('HTTPServer', function () {
 			})
 			.catch(done);
 		});
-
+		
 		it(`shouldn't be able to send a request without a username`, async function() {
 			let f = () => {};
 			try {

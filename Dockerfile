@@ -4,7 +4,7 @@ WORKDIR /app
 
 EXPOSE 9050
 
-EXPOSE 53
+EXPOSE 9053
 
 EXPOSE 9077
 
@@ -12,9 +12,11 @@ ENV PARENT_DATA_DIRECTORTY /var/lib/tor-router
 
 ENV TOR_PATH /usr/bin/tor
 
+ENV NODE_ENV production
+
 ENV PATH $PATH:/app/bin 
 
-RUN apt-get update && apt-get install -y tor
+RUN apt-get update && apt-get install -y tor && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -ms /bin/bash tor_router
 
@@ -24,7 +26,7 @@ USER tor_router
 
 ADD package.json /app/package.json
 
-RUN npm install
+RUN npm install 
 
 ADD . /app
 

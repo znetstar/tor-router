@@ -41,7 +41,7 @@ If just a port number is passed in place of a host, it will bind to all interfac
 |-p, --parentDataDirectory	|PARENT_DATA_DIRECTORY|Parent directory that will contain the data directories for the instances|
 |-b, --loadBalanceMethod	|LOAD_BALANCE_METHOD |Method that will be used to sort the instances between each request. Currently supports "round_robin" and "weighted".	|
 |-t, --torPath				|TOR_PATH			|Provide the path for the Tor executable that will be used| 
-|-n, --proxyByName			|PROXY_BY_NAME		|Controls how authenticated requests will be handled. Can be set to "individual", "groups" or false to disable|
+|-n, --proxyByName			|PROXY_BY_NAME		|Controls how authenticated requests will be handled. Can be set to "individual", "group" or false to disable|
 
 A full list of all available configuration options and their defaults can be found in [default_config.js](https://github.com/znetstar/tor-router/blob/master/src/default_config.js)
 
@@ -78,7 +78,7 @@ Using the configuration file you can set a default configuration for all Tor ins
 
 You can also specify a configuration for individual instances by setting the "instances" field to an array instead of an integer.
 
-Instances can optionally be assigned name and a weight. If the `loadBalanceMethod` config variable is set to "weighted" the weight field will determine how frequently the instance is used. If the instance is assigned a name the data directory will be preserved when the process is killed saving time when Tor is restarted.
+Instances can optionally be assigned name and a weight. If the `loadBalanceMethod` config variable is set to "weighted" the weight field will determine how frequently the instance is used. If the instance is assigned a name the data directory will be preserved when the process is killed saving time when Tor is restarted. They can also be assigned one or more groups.
 
 ```
 {
@@ -100,9 +100,39 @@ Instances can optionally be assigned name and a weight. If the `loadBalanceMetho
 }
 ```
 
+If the `proxyByName` (argument `-n`) configuration property is set to 'individual', which it is by default, you can use the instance name to send requests to a specific instance. The username field in the proxy URL will identify the instance. For example, using `http://instance-1:@localhost:9080` when connecting to the HTTP Proxy would route requests to "instance-1". 
+
+This feature works on the HTTP Proxy as well as the SOCKS Proxy, but not the DNS proxy since DNS lacks authentication.
+
+## Groups
+
+Instances can be assigned one or more groups.
+
+```
+{
+	"loadBalanceMethod": "weighted",
+	"instances": [
+		{
+			"Name": "instance-1",
+			"Group": [ "foo", "bar ]
+		},
+		{
+			"Name": "instance-2",
+			"Group": [ "foo" ]
+		},
+		{
+			"Name": "instance-3",
+			"Group": "baz"
+		}
+	]
+}
+```
+
+If the `proxyByName` (argument `-n`) configuration property is set to "group" requests can be routed to a group of instances using the username field in the proxy URL. For example, using `http://foo:@localhost:9080` as the proxy URL will send requests too "instance-1" and "instance-2" rotating them in a round-robin fashion.
+
 ## Control Server
 
-A JSON-RPC 2 TCP Server will listen on port 9077 by default. Using the rpc server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running.
+A JSON-RPC 2 TCP Server will listen on port 9077 by default. Using the rpc server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running. The control server will also accept websocket connections if the `--websocketControlHost` or `-w` flag is set. 
 
 Example (in node):
 

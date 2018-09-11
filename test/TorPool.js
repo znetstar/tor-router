@@ -89,8 +89,8 @@ describe('TorPool', function () {
 
 	describe('#add(instance_defintions)', function () {
 		let instance_defintions = [
-			{ Name: 'instance-1', Config: { ProtocolWarnings: 1} },
-			{ Name: 'instance-2', Config: { ProtocolWarnings: 1 } }
+			{ Name: 'instance-1', Group: [], Config: { ProtocolWarnings: 1} },
+			{ Name: 'instance-2', Group: [], Config: { ProtocolWarnings: 1 } }
 		];
 
 		let torPool;
