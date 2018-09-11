@@ -1,4 +1,5 @@
 const rpc = require('jrpc2');
+const Promise = require('bluebird');
 
 const SOCKSServer = require('./SOCKSServer');
 const HTTPServer = require('./HTTPServer');
@@ -87,7 +88,33 @@ class ControlServer {
 		}).bind(this));
 
 		server.expose('closeInstances', (async () => this.torPool.exit()).bind(this));
-		
+
+		server.expose('setConfig', ((key, value) => {
+			return this.nconf.set(key, value);
+		}).bind(this));	
+	
+		server.expose('getConfig', ((key) => {
+			return this.nconf.get(key);
+		}).bind(this));	
+
+		server.expose('saveConfig', (async () => {
+			await new Promise((resolve, reject) => {
+				this.nconf.save((err) => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
+		}).bind(this));	
+
+		server.expose('loadConfig', (async () => {
+			await new Promise((resolve, reject) => {
+				this.nconf.load((err) => {
+					if (err) return reject(err);
+					resolve();
+				});
+			});
+		}).bind(this));	
+
 		server.expose('getDefaultTorConfig', (async () => {
 			return this.nconf.get('torConfig');
 		}).bind(this));
@@ -116,8 +143,9 @@ class ControlServer {
 			return this.torPool.load_balance_method;
 		}).bind(this));	
 
-		server.expose('setLoadBalanceMethod', (async (loadBalanceMethod) => {
+		server.expose('setLoadBalanceMethod', ((loadBalanceMethod) => {
 			this.torPool.load_balance_method = loadBalanceMethod;
+			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
 		}).bind(this));	
 
 		server.expose('getInstanceConfigByName', this.torPool.get_config_by_name.bind(this.torPool));	

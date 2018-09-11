@@ -114,13 +114,21 @@ Apples the provided configuration to all instances using the control protocol. C
 
 Apples the provided configuration to all instances in a group using the control protocol. Changes will be applied immediately.
 
-## getDefaultTorConfig() 
+## getConfig(key: String) 
 
-Retrieve the default Tor Config for all future instances
+Retrieve a value from application configuration.
 
-## setDefaultTorConfig(config: Object)
+## setConfig(key: String, value: Any)
 
-Set the default Tor Config for all future instances
+Sets a value in application configuration.
+
+## saveConfig()
+
+If the application was started using a config file will save the current configuration.
+
+## loadConfig()
+
+If the application was started using a config file will load the configuration from the config file.
 
 ## getLoadBalanceMethod()
 

@@ -190,6 +190,8 @@ let argv_config =
         }
     });
 
+Promise.promisifyAll(nconf);
+
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);
 nconf
     .argv(argv_config);

@@ -3,23 +3,26 @@
 ## [4.0.0] - 2018-09-09
 
 ### Added
-- Instances can now added to one or more groups by setting the `Group` field in the instance definition to a single string or array.
-- You can now proxy through a specific instance using the username field when connecting to a proxy. Setting `--proxyByName` or `-n` to false will disable this feature. For example to connect to an instance named `instance-1` via http use `http://instance-1:@localhost:9080`.
-- You can also connect to a specific group of instances by setting `--proxyByName` or `-n` to "group". If enabled requests made to  `://foo:@localhost:9080` would be routed to instances in the `foo` group.
-- The control server will accept WebSocket connections if the `--websocketControlHost` or `-w` argument is set. If the argument is used without a hostname it will default to 9078 on all interfaces.
-- All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which takes a port and optionally, a host returns a Promise that will resolve when the server is listening.
+- Instances can now added to one or more groups by setting the `Group` field in the instance definition to a single string or array
+- You can now proxy through a specific instance using the username field when connecting to a proxy. Setting `--proxyByName` or `-n` to false will disable this feature. For example: to connect to an instance named `instance-1` via http use `http://instance-1:@localhost:9080`
+- You can also connect to a specific group of instances by setting `--proxyByName` or `-n` to "group". If enabled, requests made to  `://foo:@localhost:9080` would be routed to instances in the `foo` group in round-robin fashion
+- The control server will accept WebSocket connections if the `--websocketControlHost` or `-w` argument is set. If the argument is used without a hostname it will default to 9078 on all interfaces
+- All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which takes a port and optionally a host. It will return a Promise that will resolve when the server is listening
+- Application configuration can be changed at runtime using the `getConfig` and `setConfig` RPC methods
+- Application configuration can be saved and loaded from disk using the `saveConfig` and `loadConfig` RPC methods
 
 ### Changes
-- All "Port" config options (e.g. socksPort) have been replaced with "Host", and can take a full host (e.g. 127.0.0.1:9050) for its value. This allows you to bind Tor Router to a specific hostname. If just a port is given it will bind to all interfaces.
-- All methods now return promises instead of accepting callbacks. Methods now take advantage of async/await to increase readability.
+- All "Port" config options (e.g. socksPort) have been replaced with "Host", and can take a full host (e.g. 127.0.0.1:9050) for its value. This allows you to bind Tor Router to a specific hostname. If just a port is given it will bind to all interfaces
+- All methods now return promises instead of accepting callbacks
 - The `logger` argument to the constructor of all classes is now optional
-- The `Config` property of instance definitions will now inherit from `TorPool.default_tor_config`.
+- The `Config` property of instance definitions will now inherit all properties from `TorPool.default_tor_config`
 - The mocha test has been split into individual files all under `test/`
 - DNS shows the source/destination hostname/port in logs instead of what the query was resolved to
-- `TorProcess` takes an instance definition as the second argument in its constructor.
+- `TorProcess` takes an instance definition as the second argument in its constructor
 
 ### Removes
 - The `new_ips` and `new_ip_at` TorPool and `new_ip` TorProcess have been removed. Use `new_identites`, `new_identity_at` and `new_identity` instead.
+- The `getDefaultTorConfig` and `setDefaultTorConfig` RPC methods have removed. Use `getConfig('torConfig')` and `setConfig('torConfig', value)` instead.
 
 ## [3.4.3] - 2018-08-10
 

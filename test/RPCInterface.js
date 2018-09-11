@@ -5,16 +5,21 @@ const Promise = require('bluebird');
 const nconf = require('nconf');
 const rpc = require('jrpc2');
 const getPort = require('get-port');
+const temp = require('temp');
+const fs = require('fs');
 
 nconf.use('memory');
-require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
+require(`${__dirname}/../src/nconf_load_env.js`)(nconf);
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 const { ControlServer } = require('../');
 const { WAIT_FOR_CREATE } = require('./constants');
+Promise.promisifyAll(fs);
+Promise.promisifyAll(temp);
 
 let rpcControlServer = new ControlServer(null, nconf);
 let rpcControlPort;
 let rpcClient;
+
 describe('ControlServer - RPC Interface', function () {
 	before('setup control server', async function () {
 		rpcControlPort = await getPort();
@@ -219,26 +224,18 @@ describe('ControlServer - RPC Interface', function () {
 		});
 	});
 
-	describe('#setDefaultTorConfig(object)', function () {
+	describe('#setConfig(key, value)', function () {
 		it('should set the default config of new instances', async function () {
 			this.timeout(3000);
-			await rpcClient.invokeAsync('setDefaultTorConfig', [ { TestSocks: 1 } ]);
+			await rpcClient.invokeAsync('setConfig', [ 'foo', 'bar' ]);
 		});
 
-		it('a new instance should be created with the modified property', async function () {
-			this.timeout(WAIT_FOR_CREATE);
-
-			await rpcControlServer.torPool.create_instance({ Name: 'config-test' });
-			let values = await rpcControlServer.torPool.instance_by_name('config-test').get_config('TestSocks');
-
-			assert.isNotEmpty(values);
-			assert.equal(values[0], "1");
+		it('a new instance should be created with the modified property', function () {
+			assert.equal(nconf.get('foo'), 'bar');;
 		});
 
-		after('remove instance', async function () {
-			this.timeout(10000);
-			nconf.set('torConfig', {});
-			await rpcControlServer.torPool.remove_by_name('config-test');
+		after('remove instance', function () {
+			nconf.reset();
 		});
 	});
 
@@ -258,21 +255,82 @@ describe('ControlServer - RPC Interface', function () {
 		});
 	});
 
-	describe('#getDefaultTorConfig()', function () {
-		before('set tor config', function () {
-			nconf.set('torConfig', { TestSocks: 1 });
+	describe('#getConfig()', function () {
+		before('set a property', function () {
+			nconf.set('foo', 'bar');
 		});
 
-		it('should return a tor config with a modified property', async function () {
+		it('should return the property that was set', async function () {
 			this.timeout(6000);
-			let raw = await rpcClient.invokeAsync('getDefaultTorConfig', [  ]);
-			let config = JSON.parse(raw).result;
+			let raw = await rpcClient.invokeAsync('getConfig', [ 'foo' ]);
+			let value = JSON.parse(raw).result;
 
-			assert.equal(config.TestSocks, 1);
+			assert.equal(value, 'bar');
 		});
 
 		after('unset property', function () {
-			nconf.set('torConfig', {});
+			nconf.reset();
+		});
+	});
+
+	describe('#saveConfig()', function () {
+		let file_path;
+
+		before('set a property and create temp file', async function () {
+			file_path = temp.path({ suffix: '.json' });
+			nconf.remove('memory');
+			nconf.file({ file: file_path });
+			nconf.set('foo', 'bar');
+		});
+
+		it('should save the config to the the temp file', async function () {
+			this.timeout(6000);
+			await rpcClient.invokeAsync('saveConfig', []);
+		});
+
+		it('the temp file should contain the property', async function () {
+			let tmp_file = await fs.readFileAsync(file_path, 'utf8');
+			let tmp_json = JSON.parse(tmp_file);
+
+			assert.equal(tmp_json.foo, 'bar');
+		});
+
+		after('unset property and delete file', async function () {
+			nconf.remove('file');
+			nconf.use('memory');
+			nconf.reset();
+
+			await fs.unlinkAsync(file_path);
+		});
+	});
+
+	describe('#loadConfig()', function () {
+		let file;
+
+		before('create temp file with property', async function () {
+			file = await temp.openAsync({ suffix: '.json' });
+
+			await fs.writeFileAsync(file.fd, JSON.stringify({ foo: 'bar' }));
+
+			nconf.remove('memory');
+			nconf.file({ file: file.path });
+		});
+
+		it('should load the config from the the temp file', async function () {
+			this.timeout(6000);
+			await rpcClient.invokeAsync('loadConfig', []);
+		});
+
+		it("the application's config should contain the property", async function () {
+			assert.equal(nconf.get('foo'), 'bar');
+		});
+
+		after('unset property and delete file', async function () {
+			nconf.remove('file');
+			nconf.use('memory');
+			nconf.reset();
+
+			await fs.unlinkAsync(file.path);
 		});
 	});
 
