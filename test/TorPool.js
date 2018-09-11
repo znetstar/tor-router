@@ -159,24 +159,44 @@ describe('TorPool', function () {
 		});
 	});
 
-	let torPool;
-	describe('#next()', function () {
-		before('create tor pool', () => { torPool = torPoolFactory(); })
+	describe('#instances_by_group(group)', function () {
+		let tor_pool;
+		let instances;
 
-		before('create tor instances', async function () {
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instances = (await tor_pool.add([ { Name: 'instance-1', Group: [ "bar", "foo" ] }, { Name: 'instance-2', Group: ["foo", "bar"] } ]));
+		});
+
+		it('should return both instances', function () {
+			assert.deepEqual(tor_pool.instances_by_group('bar'), instances);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#next()', function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
 			this.timeout(WAIT_FOR_CREATE * 3);
 			await torPool.add([
 				{
 					Name: 'instance-1',
-					Weight: 50
+					Weight: 50,
+					Group: 'foo'
 				},
 				{
 					Name: 'instance-2',
-					Weight: 25
+					Weight: 25,
+					Group: 'bar'
 				},
 				{
 					Name: 'instance-3',
-					Weight: 2
+					Weight: 2,
+					Group: 'bar'
 				}
 			]);
 		});
@@ -186,58 +206,177 @@ describe('TorPool', function () {
 			let t2 = torPool.next().instance_name;
 			assert.notEqual(t1, t2);
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#instance_by_name(instance_name)', function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add([
+				{
+					Name: 'instance-1'
+				}
+			]);
+		});
+		
 		it('should retrieve instance by name', function () {
 			assert.ok(torPool.instance_by_name('instance-1'));
 		});	
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#remove_by_name(instance_name)', function () {
-		this.timeout(5000);
-		it('should remove instance by name', async function () {
-			await torPool.remove_by_name('instance-3');
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add([
+				{
+					Name: 'instance-3'
+				}
+			]);
 		});
+
+		it('should remove instance by name', async function () {
+			this.timeout(5000);
+
+			await torPool.remove_by_name('instance-3');
+
+			assert.notIncludeDeepOrderedMembers(torPool.instance_names, [ "instance-3" ]);
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#instance_at(index)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
+
+		});
+
 		it('should retrieve an instance by id', function () {
+			this.timeout(5000);
 			assert.ok(torPool.instance_at(0));
 		});
+		
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#remove_at(index)', function () {
-		this.timeout(5000);
-		it('should remove an instance by id', async function () {
-			await torPool.remove_at(1);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE );
+			await torPool.create(1);
+
 		});
+		
+		it('should remove an instance by id', async function () {
+			this.timeout(5000);
+			await torPool.remove_at(0);
+
+			assert.notOk(torPool.instances[0]);
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
+	
 	describe('#new_identites()', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE * 2);
+			await torPool.create(2);
+
+		});
+
 		it('should signal to retrieve a new identity to all instances', async function () {
+			this.timeout(5000);
 			await torPool.new_identites();
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
+	});
+
+	describe('#new_identites_by_group(group)', function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE * 3);
+			await torPool.add([
+				{ Name: 'instance-1', Group: 'bar' },
+				{ Name: 'instance-2', Group: 'foo' }
+			]);
+
+		});
+		
+		it('should signal to retrieve a new identity to all instances', async function () {
+			this.timeout(5000);
+			await torPool.new_identites_by_group('bar');
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#new_identity_at(index)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
+
+		});
+		
 		it('should signal to retrieve a new identity identified by index', async function () {
+			this.timeout(5000);
 			await torPool.new_identity_at(0);
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#new_identity_by_name(instance_name)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add({ Name: 'instance-1' });
+		});
+		
 		it('should signal to retrieve a new identity identified by name', async function () {
+			this.timeout(5000);
 			await torPool.new_identity_by_name('instance-1');
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 
 	describe('#set_config_all(keyword, value)', function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE * 2);
+			await torPool.create(2);
+		});
+
 		it('should set configuration on all active instances', async function () {
 			this.timeout(5000);
 			await torPool.set_config_all('TestSocks', 1);
@@ -251,65 +390,190 @@ describe('TorPool', function () {
 			assert.isTrue( values.every((value) => value === "1") );
 		});
 
-		after('unset config options', async function () {
-			await torPool.set_config_all('TestSocks', 0);
+		after('shutdown tor pool', async function () { await torPool.exit(); });
+	});
+
+	describe('#set_config_by_group(group, keyword, value)', function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add([ { Name: 'instance-1', Group: 'foo' }, { Name: 'instance-2', Group: 'bar' }  ]);
+
 		});
+
+		it('should set configuration on all active instances', async function () {
+			this.timeout(5000);
+			await torPool.set_config_by_group('bar', 'TestSocks', 1);
+		});
+
+		it('all instances should contain the same changed configuration', async function () {
+			this.timeout(5000);
+
+			let values_from_bar = await Promise.all(torPool.instances_by_group('bar').map((instance) => instance.get_config('TestSocks')));
+			values_from_bar = _.flatten(values_from_bar);
+			assert.isTrue( values_from_bar.every((value) => value === "1") );
+
+			let values_from_foo = await Promise.all(torPool.instances_by_group('foo').map((instance) => instance.get_config('TestSocks')));
+			values_from_foo = _.flatten(values_from_foo);
+			assert.isTrue( values_from_foo.every((value) => value !== "1") );
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#set_config_by_name(name, keyword, value)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add({ Name: 'instance-1' });
+
+		});
+
 		it('should set a configuration property of an instance identified by name', async function () {
+			this.timeout(5000);
 			await torPool.set_config_by_name('instance-1', 'ProtocolWarnings', 1);
 		});
+
+		it('should have the set value', async function () {
+			this.timeout(5000);
+			let value = _.flatten(await torPool.get_config_by_name('instance-1', 'ProtocolWarnings'))[0];
+			assert.equal(value, '1');
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#get_config_by_name(name, keyword)', function () {
-		this.timeout(5000);
-		it('should get retrieve the configuration of an instance identified by name', async function () {
-			let value = await torPool.get_config_by_name('instance-1', 'ProtocolWarnings');
-			assert.equal(value, 1);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add({ Name: 'instance-1', Config: { ProtocolWarnings: 1 } });
 		});
+
+		it('should get retrieve the configuration of an instance identified by name', async function () {
+			this.timeout(5000);
+			let value = _.flatten(await torPool.get_config_by_name('instance-1', 'ProtocolWarnings'))[0];
+			assert.equal(value, '1');
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#set_config_at(index, keyword, value)', function () {
-		this.timeout(5000);
-		it('should set a configuration property of an instance identified by index', async function () {
-			await torPool.set_config_at(0, 'ProtocolWarnings', 0);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
 		});
+
+		it('should set a configuration property of an instance identified by index', async function () {
+			this.timeout(5000);
+			await torPool.set_config_at(0, 'ProtocolWarnings', 1);
+		});
+
+		it('should have the set value', async function () {
+			this.timeout(5000);
+			let value = _.flatten(await torPool.get_config_at(0, 'ProtocolWarnings'))[0];
+			assert.equal(value, '1');
+		});
+		
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#get_config_at(index, keyword)', function () {
-		this.timeout(5000);
-		it('should get retrieve the configuration of an instance identified by name', async function () {
-			let value = await torPool.get_config_at(0, 'ProtocolWarnings');
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
 
-			assert.equal(value, 0);
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.add({ Config: { ProtocolWarnings: 1 } });
 		});
+		
+		it('should get retrieve the configuration of an instance identified by name', async function () {
+			this.timeout(5000);
+			let value = _.flatten(await torPool.get_config_at(0, 'ProtocolWarnings'))[0];
+
+			assert.equal(value, '1');
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#signal_all(signal)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
+
+		});
+		
 		it('should send a signal to all instances', async function () {
+			this.timeout(5000);
 			await torPool.signal_all('DEBUG');
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#signal_by_name(name, signal)', async function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create({ Name: 'instance-1' });
+		});
+
 		it('should send a signal to an instance identified by name', async function () {
+			this.timeout(5000);
 			await torPool.signal_by_name('instance-1', 'DEBUG');
 		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
+	});
+
+	describe('#signal_by_group(group, name, signal)', async function () {
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
+		});
+
+		it('should send a signal to an instance identified by name', async function () {
+			this.timeout(5000);
+			await torPool.signal_by_group('foo', 'DEBUG');
+		});
+
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#signal_at(index, signal)', function () {
-		this.timeout(5000);
+		let torPool;
+		before('create tor pool', async function () { 
+			torPool = torPoolFactory(); 
+
+			this.timeout(WAIT_FOR_CREATE);
+			await torPool.create(1);
+		});
+		
 		it('should send a signal to an instance identified by index', async function () {
+			this.timeout(5000);
 			await torPool.signal_at(0, 'DEBUG');
 		});
-	});
 
-	after('shutdown tor pool', async function () {
-		await torPool.exit();
+		after('shutdown tor pool', async function () { await torPool.exit(); });
 	});
 
 	describe('#group_names', function () {
@@ -329,7 +593,7 @@ describe('TorPool', function () {
 
 		after('shutdown tor pool', async function () { await tor_pool.exit(); });
 	});
-	
+
 	describe('#add_instance_to_group(group, instance)', function () {
 		let tor_pool;
 		let instance;
@@ -337,7 +601,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.create(1)).shift();
+			instance = (await tor_pool.create(1))[0];
 		});
 
 		it('should add the instance to the group successfully', function () {
@@ -358,7 +622,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.add({ Name: 'instance-1' })).shift();
+			instance = (await tor_pool.add({ Name: 'instance-1' }))[0];
 		});
 
 		it('should add the instance to the group successfully', function () {
@@ -379,7 +643,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.create(1)).shift();
+			instance = (await tor_pool.create(1))[0];
 		});
 
 		it('should add the instance to the group successfully', function () {
@@ -400,7 +664,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.add({ Group: "foo" })).shift();
+			instance = (await tor_pool.add({ Group: "foo" }))[0];
 		});
 
 		it('should remove the instance from the group successfully', function () {
@@ -421,7 +685,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.add({ Name: 'instance-1', Group: "foo" })).shift();
+			instance = (await tor_pool.add({ Name: 'instance-1', Group: "foo" }))[0];
 		});
 
 		it('should remove the instance from the group successfully', function () {
@@ -442,7 +706,7 @@ describe('TorPool', function () {
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
-			instance = (await tor_pool.add({ Group: "foo" })).shift();
+			instance = (await tor_pool.add({ Group: "foo" }))[0];
 		});
 
 		it('should remove the instance from the group successfully', function () {

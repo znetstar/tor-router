@@ -48,6 +48,17 @@ class TorPool extends EventEmitter {
 	get group_names() {
 		return new Set(_.uniq(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean))).sort());
 	}
+
+	instances_by_group(group_name) {
+		let group = this.groups[group_name];
+		let arr = [];
+
+		for (let i = 0; i < group.length; i++) {
+			arr.push(group[i]);
+		}
+
+		return arr;
+	}
 	
 	add_instance_to_group(group, instance) {
 		instance.definition.Group = _.union(instance.instance_group, [group]);
@@ -271,6 +282,10 @@ class TorPool extends EventEmitter {
 		await Promise.all(this.instances.map((instance) => instance.new_identity()));
 	}
 
+	async new_identites_by_group(group) {
+		await Promise.all(this.instances_by_group(group).map((instance) => instance.new_identity()));
+	}
+
 	async new_identity_at(index) {
 		await this.instances[index].new_identity();
 	}
@@ -314,6 +329,14 @@ class TorPool extends EventEmitter {
 		if (!instance) 
 			throw new Error(`Instance at ${index} not found`);
 		return await instance.set_config(keyword, value);
+	}
+
+	async set_config_by_group(group, keyword, value) {
+		return await Promise.all(this.instances_by_group(group).map((instance) => instance.set_config(keyword, value)));
+	}
+
+	async signal_by_group(group, signal) {
+		await Promise.all(this.instances_by_group(group).map((instance) => instance.signal(signal)));
 	}
 
 	async set_config_all(keyword, value) {
