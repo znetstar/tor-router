@@ -82,6 +82,7 @@ Instances can optionally be assigned name and a weight. If the `loadBalanceMetho
 
 ```
 {
+	"loadBalanceMethod": "weighted",
 	"instances": [
 		{
 			"Name": "instance-1"
@@ -109,7 +110,6 @@ Instances can be assigned one or more groups.
 
 ```
 {
-	"loadBalanceMethod": "weighted",
 	"instances": [
 		{
 			"Name": "instance-1",
