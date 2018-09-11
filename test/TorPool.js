@@ -88,7 +88,7 @@ describe('TorPool', function () {
 	});
 
 	describe('#add(instance_defintions)', function () {
-		var instance_defintions = [
+		let instance_defintions = [
 			{ Name: 'instance-1', Config: { ProtocolWarnings: 1} },
 			{ Name: 'instance-2', Config: { ProtocolWarnings: 1 } }
 		];
@@ -208,6 +208,33 @@ describe('TorPool', function () {
 		});
 
 		after('shutdown tor pool', async function () { await torPool.exit(); });
+	});
+
+
+	describe('#next_by_group(group)', function () {
+		let tor_pool;
+
+		before('create tor pool', async function () {
+			tor_pool = new TorPool(nconf.get('torPath'), (() => nconf.get('torConfig')), nconf.get('parentDataDirectory'), 'round_robin', null);
+			this.timeout(WAIT_FOR_CREATE * 3);
+			await tor_pool.add([
+				{ Group: 'foo' },
+				{ Group: 'bar' },
+				{ Group: 'bar' }
+			]);
+		});
+
+		it('after rotating the first instance in group should be different', function () {
+			let first_instance_name_before = tor_pool.groups['bar'][0].instance_name;
+
+			tor_pool.next_by_group('bar');
+
+			let first_instance_name_after = tor_pool.groups['bar'][0].instance_name;
+			
+			assert.notEqual(first_instance_name_after, first_instance_name_before);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
 	});
 
 	describe('#instance_by_name(instance_name)', function () {
@@ -730,59 +757,68 @@ describe('TorPool', function () {
 			for (let i = 0; i < group.length; i++)
 				instances.push(group[i]);
 			
-			return instances.map((i) => i.instance_name);
+			return instances.map((i) => i.instance_name).sort();
 		};
 
 		before('create tor pool', async function () { 
 			tor_pool = torPoolFactory(); 
-			this.timeout(WAIT_FOR_CREATE * 2);
+			this.timeout(WAIT_FOR_CREATE * 3);
 			instances = (await tor_pool.add([
-				{ Group: "foo", Name: 'instance-1' },
-				{ Group: ["bar", "baz"], Name: 'instance-2' }
+				{ Group: ["foo", "flob"], Name: 'instance-1' },
+				{ Group: ["bar", "baz"], Name: 'instance-2' },
+				{ Group: ["flob"], Name: 'instance-3' }
 			]));
 		});		
 
+
 		it('should contain three groups, bar, baz and foo', function () {
-			assert.deepEqual(Array.from(tor_pool.group_names), [ "bar", "baz", "foo" ]);
+			assert.deepEqual(Array.from(tor_pool.group_names).sort(), [ "bar", "baz", "flob", "foo" ]);
 		});
 
 		it('#[Number] - the 1st element should be "instance-1"', function () {
 			assert.equal(tor_pool.groups["foo"][0], instances[0]);
 		});
 
-		it('#length - group "foo" should contain 1 instance', function () {
+		it('#length() - group "foo" should contain 1 instance', function () {
 			assert.equal(tor_pool.groups["foo"].length, 1);
 		});
 
-		it('#add - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
+		it('#add() - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
 			tor_pool.groups["baz"].add(instances[0]);
 
 			assert.deepEqual(get_instance_names("baz"), [ "instance-1", "instance-2" ] );
 		});
 
-		it('#remove - removing "instance-1" firom "baz" should result in "baz" having just "instance-2"', function () {
+		it('#remove() - removing "instance-1" firom "baz" should result in "baz" having just "instance-2"', function () {
 			tor_pool.groups["baz"].remove(instances[0]);
 
 			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
 		});
 
-		it('#add_by_name - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
+		it('#add_by_name() - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
 			tor_pool.groups["baz"].add_by_name('instance-1');
 
 			assert.deepEqual(get_instance_names("baz"), [ "instance-1", "instance-2" ] );
 		});
 
-		it('#remove_by_name - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
+		it('#remove_by_name() - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
 			tor_pool.groups["baz"].remove_by_name('instance-1');
 
 			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
 		});
 
-		it('#remove_at - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
+		it('#remove_at() - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
 			tor_pool.groups["baz"].add_by_name('instance-1');
 			tor_pool.groups["baz"].remove_at(0);
 
-			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
+			assert.deepEqual(get_instance_names("baz"), [ "instance-1" ] );
+		});
+
+		it('#rotate() - the name of the first instance should change', function () {
+			let first_instance_name_before = tor_pool.groups["flob"][0].instance_name;
+			tor_pool.groups["flob"].rotate();
+			let first_instance_name_after = tor_pool.groups["flob"][0].instance_name;
+			assert.notEqual(first_instance_name_after, first_instance_name_before);
 		});
 
 		after('shutdown tor pool', async function () { await tor_pool.exit(); });

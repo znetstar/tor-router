@@ -426,6 +426,26 @@ describe('ControlServer - RPC Interface', function () {
 			assert.notEqual(rpcControlServer.torPool.instances[0].instance_name, instance_name);
 		});
 	});
+
+	describe('#nextInstanceByGroup(group)', function () {
+		before('add "instance-1" to "foo"', function () {
+			rpcControlServer.torPool.add_instance_to_group_by_name('foo', 'instance-2');
+		});
+
+		it('should rotate the instances in group "foo"', async function () {
+			this.timeout(5000);
+			let first_instance_name_before = rpcControlServer.torPool.groups['foo'][0].instance_name;
+			await rpcClient.invokeAsync('nextInstanceByGroup', [ 'foo' ]);		
+			let first_instance_name_after = rpcControlServer.torPool.groups['foo'][0].instance_name;
+			
+			assert.notEqual(first_instance_name_after, first_instance_name_before);
+		});
+
+		after('remove "instance-1" from "foo"', function () {
+			rpcControlServer.torPool.remove_instance_from_group_by_name('foo', 'instance-2');
+		})
+	});
+
 	var instance_num1, instance_num2, i_num;
 	describe('#removeInstanceAt(index)', function () {
 		this.timeout(10000);

@@ -22,17 +22,12 @@ class ControlServer {
 			return { group: i.instance_group, name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight };
 		};
 
+		
 		server.expose('queryInstances', (async () => {
-			if (!this.torPool)
-				throw new Error('No Tor Pool created');
-			
 			return this.torPool.instances.map(instance_info);
 		}).bind(this));
 
 		server.expose('queryInstanceByName', (async (instance_name) => {
-			if (!this.torPool)
-				throw new Error('No pool created');
-
 			let instance = this.torPool.instance_by_name(instance_name);
 
 			if (!instance)
@@ -86,6 +81,10 @@ class ControlServer {
 		server.expose('newIdentitiesByGroup', (async (group) => await this.torPool.new_identites_by_group(group)).bind(this));
 
 		server.expose('nextInstance', (async () => instance_info( await this.torPool.next() )).bind(this));
+
+		server.expose('nextInstanceByGroup', ((group) => {
+			return instance_info(this.torPool.next_by_group(group));
+		}).bind(this));
 
 		server.expose('closeInstances', (async () => this.torPool.exit()).bind(this));
 		

@@ -144,7 +144,7 @@ class HTTPServer extends Server {
 					connect(instance);
 				}
 				else {
-					this.logger.debug(`[socks]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
+					this.logger.debug(`[http-proxy]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
 					instance.once('ready', (() => connect(instance)));
 				}
 			}
@@ -210,7 +210,7 @@ class HTTPServer extends Server {
 					connect(instance);
 				}
 				else {
-					this.logger.debug(`[socks]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
+					this.logger.debug(`[http-connect]: a connection has been attempted to "${instance.instance_name}", but it is not live... waiting for the instance to come online`);
 					instance.once('ready', (() => connect(instance)));
 				}
 			}

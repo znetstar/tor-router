@@ -104,31 +104,56 @@ class TorPool extends EventEmitter {
 				if (!Number.isNaN(Number(prop)))
 					return instances[prop];
 
+				let save_index = () => {
+					instances = instances.map((instance, index) => {
+						instance._index =  index;
+						return instance;
+					});
+				};
+
 				let { group_name } = instances;
 				
 				if (prop === 'add') 
 					return (instance) => {
-						return this.add_instance_to_group(group_name, instance);
+						this.add_instance_to_group(group_name, instance);
+						save_index();
 					};
 				
-				if (prop === 'add_by_name') 
-					return this.add_instance_to_group_by_name.bind(this, group_name);
+				if (prop === 'add_by_name') {
+					return (instance_name) => {
+						this.add_instance_to_group_by_name(group_name, instance_name);
+						save_index();
+					};
+				}
 
 				if (prop === 'remove')
 					return (instance) => {
-						return this.remove_instance_from_group(group_name, instance);
+						this.remove_instance_from_group(group_name, instance);
+						save_index();
 					};
 			
-				if (prop === 'remove_by_name') 
-					return this.remove_instance_from_group_by_name.bind(this, group_name);
-				
+				if (prop === 'remove_by_name') {
+					return (instance_name) => {
+						this.remove_instance_from_group_by_name(group_name, instance_name);
+						save_index();
+					};
+				}
+
 				if (prop === 'remove_at') 					
 					return (instance_index) => {
-						return this.remove_instance_from_group(group_name, instances[instance_index]);
+						this.remove_instance_from_group(group_name, instances[instance_index]);
+						save_index();
 					};
 
 				if (prop === 'length')
 					return instances.length;
+
+				if (prop === 'rotate') {
+					return () => {
+						instances.rotate(1);
+						save_index();
+					};
+				}
 				
 				return void(0);
 			}
@@ -142,7 +167,8 @@ class TorPool extends EventEmitter {
 					instances_in_group = this.instances.filter((instance) => instance.instance_group.indexOf(prop) !== -1);
 				}
 
-				instances_in_group = _.sortBy(instances_in_group, 'instance_name');
+
+				instances_in_group = _.sortBy(instances_in_group, ['_index', 'instance_name']);
 
 				instances_in_group.group_name = prop;
 
@@ -201,9 +227,8 @@ class TorPool extends EventEmitter {
 		
 		this._instances._weighted_list = void(0);
 		instance_definition.Config = _.extend(_.cloneDeep(this.default_tor_config), (instance_definition.Config || {}));
-		instance_definition.Config.DataDirectory = instance_definition.Config.DataDirectory || path.join(this.data_directory, (instance_definition.Name || instance_id));
-		
 		let instance = new TorProcess(this.tor_path, instance_definition, this.granax_options, this.logger);
+		instance.definition.Config.DataDirectory = instance.definition.Config.DataDirectory || path.join(this.data_directory, instance.instance_name);
 		
 		await instance.create();
 		
@@ -266,6 +291,11 @@ class TorPool extends EventEmitter {
 	next() {
 		this._instances = TorPool.load_balance_methods[this.load_balance_method](this._instances);
 		return this.instances[0];
+	}
+
+	next_by_group(group) {
+		this.groups[group].rotate();
+		return this.groups[group][0];
 	}
 
 	async exit() {

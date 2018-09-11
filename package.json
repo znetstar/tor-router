@@ -5,7 +5,7 @@
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
   "license": "Apache-2.0",
-  "description": "A SOCKS proxy for distributing traffic across multiple instances of Tor",
+  "description": "A SOCKS, HTTP and DNS proxy for distributing traffic across multiple instances of Tor",
   "bin": {
     "tor-router": "bin/tor-router"
   },
