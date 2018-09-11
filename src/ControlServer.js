@@ -19,7 +19,7 @@ class ControlServer {
 		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
 
 		const instance_info = (i) => {
-			return { name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight };
+			return { group: i.instance_group, name: i.instance_name, dns_port: i.dns_port, socks_port: i.socks_port, process_id: i.process.pid, config: i.definition.Config, weight: i.definition.weight };
 		};
 
 		server.expose('queryInstances', (async () => {

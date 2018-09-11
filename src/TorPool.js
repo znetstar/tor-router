@@ -46,7 +46,7 @@ class TorPool extends EventEmitter {
 	}
 
 	get group_names() {
-		return _.uniq(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean)));
+		return new Set(_.uniq(_.flatten(this.instances.map((instance) => instance.instance_group).filter(Boolean))).sort());
 	}
 	
 	add_instance_to_group(group, instance) {
@@ -117,6 +117,9 @@ class TorPool extends EventEmitter {
 					return (instance_index) => {
 						return this.remove_instance_from_group(group_name, instances[instance_index]);
 					};
+
+				if (prop === 'length')
+					return instances.length;
 				
 				return void(0);
 			}
@@ -126,9 +129,11 @@ class TorPool extends EventEmitter {
 			get: (group_names, prop) => {
 				let instances_in_group = [];
 
-				if (group_names.indexOf(prop) !== -1) {
+				if (group_names.has(prop)) {
 					instances_in_group = this.instances.filter((instance) => instance.instance_group.indexOf(prop) !== -1);
 				}
+
+				instances_in_group = _.sortBy(instances_in_group, 'instance_name');
 
 				instances_in_group.group_name = prop;
 
@@ -174,10 +179,17 @@ class TorPool extends EventEmitter {
 		return this._instances.slice(0);
 	}
 
+	get instance_names() {
+		return this.instances.map((i) => i.instance_name);
+	}
+
 	async create_instance(instance_definition) {
 		if (!(fs.existsSync(this.data_directory)))
 			await fs.mkdirAsync(this.data_directory);
 
+		if (instance_definition.Name && this.instance_names.indexOf(instance_definition.Name) !== -1) 
+			throw new Error(`Instance named ${instance_definition.Name} already exists`);
+		
 		this._instances._weighted_list = void(0);
 		instance_definition.Config = _.extend(_.cloneDeep(this.default_tor_config), (instance_definition.Config || {}));
 		let instance_id = nanoid();
@@ -217,7 +229,7 @@ class TorPool extends EventEmitter {
 	}
 
 	instance_by_name(name) {
-		return this._instances.filter((i) => i.definition.Name === name)[0];
+		return this._instances.filter((i) => i.instance_name === name)[0];
 	}
 
 	instance_at(index) {

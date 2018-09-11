@@ -13,6 +13,32 @@ nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 describe('TorPool', function () {
 	const torPoolFactory = () => new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
 
+	describe('#default_tor_config', function () {
+		let tor_pool;
+		let cfg = { "TestSocks": 1, "Log": "notice stdout", "NewCircuitPeriod": "10" };
+
+		before('create tor config based on nconf', function () {
+			nconf.set('torConfig', cfg); 
+			tor_pool = new TorPool(nconf.get('torPath'), (() => nconf.get('torConfig')), nconf.get('parentDataDirectory'), 'round_robin', null);
+		});
+
+		it('the tor config should have the same value as set in nconf', function () {
+			assert.deepEqual(nconf.get('torConfig'), tor_pool.default_tor_config);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+
+		before('create tor config based on nconf', function () {
+			tor_pool = new TorPool(nconf.get('torPath'), cfg, nconf.get('parentDataDirectory'), 'round_robin', null);
+		});
+
+		it('the tor config should have the same value as set', function () {
+			assert.deepEqual(cfg, tor_pool.default_tor_config);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
 	describe('#create_instance(instance_defintion)', function () {
 		let instance_defintion = {
 			Name: 'instance-1',
@@ -42,8 +68,22 @@ describe('TorPool', function () {
 			assert.equal(value, instance_defintion.Config.ProtocolWarnings);
 		});
 
+		it('should not be able to create an instance with an existing name', async function () {
+			let fn = () => {}
+
+			try {
+				await torPool.create_instance({ Name: 'foo' });
+				await torPool.create_instance({ Name: 'foo' });
+			}
+			catch (error) {
+				fn = () => { throw error };
+			} finally {
+				assert.throws(fn);
+			}
+		});
+
 		after('shutdown tor pool', async function () {
-			torPool.exit();
+			await torPool.exit();
 		});
 	});
 
@@ -270,5 +310,217 @@ describe('TorPool', function () {
 
 	after('shutdown tor pool', async function () {
 		await torPool.exit();
+	});
+
+	describe('#group_names', function () {
+		let tor_pool;
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE * 2);
+			await tor_pool.add([
+				{ Name: 'instance-1', Group: [ "foo", "bar" ] },
+				{ Name: 'instance-2', Group: "baz" }
+			]);
+		});
+
+		it('the pool should contain three groups, bar, baz and foo', function () {
+			assert.deepEqual(tor_pool.group_names, (new Set([ "bar", "baz", "foo" ])));
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+	
+	describe('#add_instance_to_group(group, instance)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.create(1)).shift();
+		});
+
+		it('should add the instance to the group successfully', function () {
+			tor_pool.add_instance_to_group("foo", instance);
+		});
+
+		it('the instance should be added to the group', function () {
+			assert.deepEqual(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#add_instance_to_group_by_name(group, instance_name)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.add({ Name: 'instance-1' })).shift();
+		});
+
+		it('should add the instance to the group successfully', function () {
+			tor_pool.add_instance_to_group_by_name("foo", instance.definition.Name);
+		});
+
+		it('the instance should be added to the group', function () {
+			assert.deepEqual(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#add_instance_to_group_at(group, instance_index)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.create(1)).shift();
+		});
+
+		it('should add the instance to the group successfully', function () {
+			tor_pool.add_instance_to_group_at("foo", 0);
+		});
+
+		it('the instance should be added to the group', function () {
+			assert.deepEqual(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#remove_instance_from_group(group, instance)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.add({ Group: "foo" })).shift();
+		});
+
+		it('should remove the instance from the group successfully', function () {
+			tor_pool.remove_instance_from_group("foo", instance);
+		});
+
+		it('the instance should be no longer be in the group', function () {
+			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#remove_instance_from_group_by_name(group, instance_name)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.add({ Name: 'instance-1', Group: "foo" })).shift();
+		});
+
+		it('should remove the instance from the group successfully', function () {
+			tor_pool.remove_instance_from_group_by_name("foo", instance.definition.Name);
+		});
+
+		it('the instance should no longer be in the group', function () {
+			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#remove_instance_from_group_at(group, instance_index)', function () {
+		let tor_pool;
+		let instance;
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE);
+			instance = (await tor_pool.add({ Group: "foo" })).shift();
+		});
+
+		it('should remove the instance from the group successfully', function () {
+			tor_pool.remove_instance_from_group_at("foo", 0);
+		});
+
+		it('the instance should no longer be in the group', function () {
+			assert.notIncludeOrderedMembers(instance.instance_group, ["foo"]);
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
+	});
+
+	describe('#groups', function () {
+		let tor_pool;
+		let instances;
+
+		let get_instance_names = (group_name) => { 
+			let instances = [];
+			let group = tor_pool.groups[group_name];
+			for (let i = 0; i < group.length; i++)
+				instances.push(group[i]);
+			
+			return instances.map((i) => i.instance_name);
+		};
+
+		before('create tor pool', async function () { 
+			tor_pool = torPoolFactory(); 
+			this.timeout(WAIT_FOR_CREATE * 2);
+			instances = (await tor_pool.add([
+				{ Group: "foo", Name: 'instance-1' },
+				{ Group: ["bar", "baz"], Name: 'instance-2' }
+			]));
+		});		
+
+		it('should contain three groups, bar, baz and foo', function () {
+			assert.deepEqual(Array.from(tor_pool.group_names), [ "bar", "baz", "foo" ]);
+		});
+
+		it('#[Number] - the 1st element should be "instance-1"', function () {
+			assert.equal(tor_pool.groups["foo"][0], instances[0]);
+		});
+
+		it('#length - group "foo" should contain 1 instance', function () {
+			assert.equal(tor_pool.groups["foo"].length, 1);
+		});
+
+		it('#add - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
+			tor_pool.groups["baz"].add(instances[0]);
+
+			assert.deepEqual(get_instance_names("baz"), [ "instance-1", "instance-2" ] );
+		});
+
+		it('#remove - removing "instance-1" firom "baz" should result in "baz" having just "instance-2"', function () {
+			tor_pool.groups["baz"].remove(instances[0]);
+
+			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
+		});
+
+		it('#add_by_name - adding "instance-1" to "baz" should result in "baz" having "instance-1" and "instance-2"', function () {
+			tor_pool.groups["baz"].add_by_name('instance-1');
+
+			assert.deepEqual(get_instance_names("baz"), [ "instance-1", "instance-2" ] );
+		});
+
+		it('#remove_by_name - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
+			tor_pool.groups["baz"].remove_by_name('instance-1');
+
+			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
+		});
+
+		it('#remove_at - removing "instance-1" from "baz" should result in "baz" having just "instance-2"', function () {
+			tor_pool.groups["baz"].add_by_name('instance-1');
+			tor_pool.groups["baz"].remove_at(0);
+
+			assert.deepEqual(get_instance_names("baz"), [ "instance-2" ] );
+		});
+
+		after('shutdown tor pool', async function () { await tor_pool.exit(); });
 	});
 });
