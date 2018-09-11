@@ -149,8 +149,8 @@ class TorPool extends EventEmitter {
 					return instances.length;
 
 				if (prop === 'rotate') {
-					return () => {
-						instances.rotate(1);
+					return (num) => {
+						instances.rotate(typeof(num) === 'undefined' ? 1 : num);
 						save_index();
 					};
 				}
@@ -166,7 +166,6 @@ class TorPool extends EventEmitter {
 				if (group_names.has(prop)) {
 					instances_in_group = this.instances.filter((instance) => instance.instance_group.indexOf(prop) !== -1);
 				}
-
 
 				instances_in_group = _.sortBy(instances_in_group, ['_index', 'instance_name']);
 
@@ -294,7 +293,7 @@ class TorPool extends EventEmitter {
 	}
 
 	next_by_group(group) {
-		this.groups[group].rotate();
+		this.groups[group].rotate(1);
 		return this.groups[group][0];
 	}
 

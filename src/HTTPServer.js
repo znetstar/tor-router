@@ -39,6 +39,8 @@ class HTTPServer extends Server {
 		if (!this.proxy_by_name)
 			return true;
 		
+		this.logger.verbose(`[http]: connected attempted to instance "${username}"`);
+		
 		let deny_un = this.proxy_by_name.deny_unidentified_users;
 		
 		let header = req.headers['authorization'] || req.headers['proxy-authorization'];
@@ -54,9 +56,17 @@ class HTTPServer extends Server {
 		if ( !username && deny_un ) return deny();
 		else if (!username) return true;
 
-		this.logger.verbose(`[http]: connected attempted to instance "${username}"`);
+		let instance;
 
-		let instance = this.tor_pool.instance_by_name(username);
+		if (this.proxy_by_name.mode === 'individual')
+			instance = this.tor_pool.instance_by_name(username);
+		else if (this.proxy_by_name.mode === 'group') {
+			if (!this.tor_pool.group_names.has(username)) return deny();
+
+			instance = this.tor_pool.next_by_group(username);
+		}
+		else
+			throw Error(`Unknown "proxy_by_name" mode ${this.proxy_by_name.mode}`);
 		
 		if (!instance) return deny();
 		req.instance = instance;

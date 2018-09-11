@@ -15,21 +15,33 @@ class SOCKSServer extends Server{
 		});
 	}
 
+	get_instance_pbn(username) {
+		if (this.proxy_by_name.mode === 'individual') 
+			return this.tor_pool.instance_by_name(username);
+		else if (this.proxy_by_name.mode === 'group') {
+			return this.tor_pool.next_by_group(username);
+		} else 
+			throw Error(`Unknown "proxy_by_name" mode ${this.proxy_by_name.mode}`);
+	}
+
 	authenticate_user(username, password, callback) {
 		let deny_un = this.proxy_by_name.deny_unidentified_users;
 
+		this.logger.verbose(`[socks]: connected attempted to instance "${username}"`);
+		
 		// No username and deny unindentifed then deny
 		if (!username && deny_un) callback(false);
 		// Otherwise if there is no username allow
 		else if (!username) callback(true);
-		
-		this.logger.verbose(`[socks]: connected attempted to instance "${username}"`);
 
-		let instance = this.tor_pool.instance_by_name(username);
-
-		// If a username is specified but no instances match that username deny
-		if (!instance) 
-			return callback(false);
+		if (this.proxy_by_name.mode === 'individual'){
+			if (!this.tor_pool.instance_names.includes(username)) return callback(false);
+		} 
+		else if (this.proxy_by_name.mode === 'group') {
+			if (!this.tor_pool.group_names.has(username)) return callback(false);
+		}
+		else 
+			throw Error(`Unknown "proxy_by_name" mode "${this.proxy_by_name.mode}"`);
 
 		// Otherwise allow
 		callback(true, true);
@@ -41,7 +53,7 @@ class SOCKSServer extends Server{
 			let instance;
 
 			if (inbound_socket.user)
-				instance = this.tor_pool.instance_by_name(inbound_socket.user);
+				instance = this.get_instance_pbn(inbound_socket.user);
 
 			let outbound_socket;
 			let buffer = [];

@@ -3,8 +3,9 @@
 ## [4.0.0] - 2018-09-09
 
 ### Added
-- Instances can now added to one or multiple groups by setting the `Group` field in the instance definition to a single string or array.
+- Instances can now added to one or more groups by setting the `Group` field in the instance definition to a single string or array.
 - You can now proxy through a specific instance using the username field when connecting to a proxy. Setting `--proxyByName` or `-n` to false will disable this feature. For example to connect to an instance named `instance-1` via http use `http://instance-1:@localhost:9080`.
+- You can also connect to a specific group of instances by setting `--proxyByName` or `-n` to "group". If enabled requests made to  `://foo:@localhost:9080` would be routed to instances in the `foo` group.
 - The control server will accept WebSocket connections if the `--websocketControlHost` or `-w` argument is set. If the argument is used without a hostname it will default to 9078 on all interfaces.
 - All servers (DNS, HTTP, SOCKS and Control) all have a `listen` method which takes a port and optionally, a host returns a Promise that will resolve when the server is listening.
 
