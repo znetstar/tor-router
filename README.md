@@ -106,7 +106,7 @@ This feature works on the HTTP Proxy as well as the SOCKS Proxy, but not the DNS
 
 ## Groups
 
-Instances can be assigned one or more groups.
+Instances can be assigned to one or more groups.
 
 ```
 {
