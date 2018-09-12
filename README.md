@@ -61,7 +61,7 @@ Example:
 
 ```
  {
- 	"controlPort": 9077,
+ 	"controlHost": 9077,
  	"logLevel": "debug"
  }
 ```
