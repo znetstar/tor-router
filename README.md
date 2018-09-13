@@ -2,11 +2,9 @@
 
 [![NPM](https://nodei.co/npm/tor-router.png)](https://nodei.co/npm/tor-router/)
 
-*Tor Router* is a simple SOCKS5 proxy server for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor and each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circuit and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
+*Tor Router* is a SOCKS5, DNS and HTTP proxy server for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor and each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circuit and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
 
-Tor Router also includes a DNS proxy server and a HTTP proxy as well, which like the SOCKS proxy will distribute traffic across multiple instances of Tor in round-robin fashion. The HTTP proxy server can be used to access Tor via an HTTP Proxy.
-
-A list of changes can be [found here](https://github.com/znetstar/tor-router/blob/master/CHANGELOG.md)
+A list of changes can be [found here](https://github.com/znetstar/tor-router/blob/master/CHANGELOG.md).
 
 ## Building and Running
 
@@ -47,147 +45,12 @@ A full list of all available configuration options and their defaults can be fou
 
 For example: `tor-router -j 3 -s 127.0.0.1:9050` would start the proxy with 3 tor instances and listen for SOCKS connections on localhost:9050.
 
+## Documentation
+
+For detailed examples and insturctions on using Tor Router [see the wiki](https://github.com/znetstar/tor-router/wiki).
+
+To generate API documentation run `npm run doc`. The documentation will be available in `doc/`. 
+
 ## Testing
 
 Tests are written in mocha and can be found under `test/` and can be run with `npm test`
-
-## Configuration
-
-Using the `--config` or `-f` command line switch you can set the path to a JSON file which can be used to load configuration on startup
-
-The same variable names from the command line switches are used to name the keys in the JSON file.
-
-Example:
-
-```
- {
- 	"controlPort": 9077,
- 	"logLevel": "debug"
- }
-```
-
-Using the configuration file you can set a default configuration for all Tor instances
-
-```
-{
-	"torConfig": {
-		"MaxCircuitDirtiness": "10"
-	}
-}
-```
-
-You can also specify a configuration for individual instances by setting the "instances" field to an array instead of an integer.
-
-Instances can optionally be assigned name and a weight. If the `loadBalanceMethod` config variable is set to "weighted" the weight field will determine how frequently the instance is used. If the instance is assigned a name the data directory will be preserved when the process is killed saving time when Tor is restarted. They can also be assigned one or more groups.
-
-```
-{
-	"loadBalanceMethod": "weighted",
-	"instances": [
-		{
-			"Name": "instance-1"
-			"Weight": 10,
-			"Config": {
-			}
-		},
-		{
-			"Name": "instance-2",
-			"Weight": 5,
-			"Config": {
-			}
-		}
-	]
-}
-```
-
-If the `proxyByName` (argument `-n`) configuration property is set to "individual" or true you can use the instance name to send requests to a specific instance. The username field in the proxy URL will identify the instance. For example, using `http://instance-1:@localhost:9080` when connecting to the HTTP Proxy would route requests to "instance-1". 
-
-This feature works on the HTTP Proxy as well as the SOCKS Proxy, but not the DNS proxy since DNS lacks authentication.
-
-## Groups
-
-Instances can be assigned one or more groups.
-
-```
-{
-	"instances": [
-		{
-			"Name": "instance-1",
-			"Group": [ "foo", "bar ]
-		},
-		{
-			"Name": "instance-2",
-			"Group": [ "foo" ]
-		},
-		{
-			"Name": "instance-3",
-			"Group": "baz"
-		}
-	]
-}
-```
-
-If the `proxyByName` (argument `-n`) configuration property is set to "group" requests can be routed to a group of instances using the username field in the proxy URL. For example, using `http://foo:@localhost:9080` as the proxy URL will send requests too "instance-1" and "instance-2" rotating them in a round-robin fashion.
-
-## Control Server
-
-A JSON-RPC 2 TCP Server will listen on port 9077 by default. Using the rpc server the client can add/remove Tor instances and get a new identity (which includes a new ip address) while Tor Router is running. The control server will also accept websocket connections if the `--websocketControlHost` or `-w` flag is set. 
-
-Example (in node):
-
-```
-	const net = require('net');
-
-	let client = net.createConnection({ port: 9077 }, () => {
-		let rpcRequest = {
-			"method": "createInstances",
-			"params": [3], 
-			"jsonrpc":"2.0", 
-			"id": 1
-		};
-		client.write(JSON.stringify(rpcRequest));
-	});
-
-	client.on('data', (chunk) => {
-		let rawResponse = chunk.toString('utf8');
-		let rpcResponse = JSON.parse(rawResponse);
-		console.log(rpcResponse)
-		if (rpcResponse.id === 1) {
-			console.log('Three instances have been created!')
-		}
-	})
-```
-
-A full list of available RPC Methods can be [found here](https://github.com/znetstar/tor-router/blob/master/docs/rpc-methods.md)
-
-## Tor Control Protocol
-
-You can retrieve or set the configuration of instances while they're running via the Tor Control Protocol.
-
-The example below will change the "MaxCircuitDirtiness" value for the first instance in the pool
-
-Example:
-```
-let rpcRequest = {
-	"method": "setInstanceConfigAt",
-	"params": [0, "MaxCircuitDirtiness", "20"], 
-	"jsonrpc":"2.0", 
-	"id": 1
-};
-client.write(JSON.stringify(rpcRequest));
-```
-
-You can also send signals directly to instances or to all instances in the pool via the control protocol. A list of all signals can be [found here](https://gitweb.torproject.org/torspec.git/tree/control-spec.txt)
-
-The example below will set the log level of all instances to "debug".
-
-Example:
-```
-let rpcRequest = {
-	"method": "signalAllInstances",
-	"params": ["DEBUG"], 
-	"jsonrpc":"2.0", 
-	"id": 1
-};
-client.write(JSON.stringify(rpcRequest));
-```

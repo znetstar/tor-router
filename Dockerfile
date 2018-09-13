@@ -2,12 +2,6 @@ FROM node:10-jessie
 
 WORKDIR /app
 
-EXPOSE 9050
-
-EXPOSE 9053
-
-EXPOSE 9077
-
 ENV PARENT_DATA_DIRECTORTY /var/lib/tor-router
 
 ENV TOR_PATH /usr/bin/tor
@@ -31,6 +25,12 @@ RUN npm install
 ADD . /app
 
 ENV HOME /home/tor_router
+
+EXPOSE 9050
+
+EXPOSE 9053
+
+EXPOSE 9077
 
 ENTRYPOINT [ "tor-router" ]
 

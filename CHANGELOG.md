@@ -1,5 +1,14 @@
 # Changelog
 
+## [4.0.2] - 2018-09-13
+
+### Added
+- Adds API documentation. To generate run `npm run doc` and open under `doc/index.html`
+
+### Changed
+- Much of the README has been moved to [the wiki](https://github.com/znetstar/tor-router/wiki)
+- Updates granax to 3.1.4 which fixes a bug on MacOS
+
 ## [4.0.1] - 2018-09-11
 
 ## [4.0.0] - 2018-09-09
