@@ -2,7 +2,8 @@
 const _ = require('lodash');
 const assert = require('chai').assert;
 const Promise = require('bluebird');
-const nconf = require('nconf');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const rpc = require('jrpc2');
 const getPort = require('get-port');
 const temp = require('temp');
@@ -16,7 +17,7 @@ const { WAIT_FOR_CREATE } = require('./constants');
 Promise.promisifyAll(fs);
 Promise.promisifyAll(temp);
 
-let rpcControlServer = new ControlServer(null, nconf);
+let rpcControlServer = new ControlServer(nconf);
 let rpcControlPort;
 let rpcClient;
 
@@ -91,7 +92,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it("tor pool should now contain and instance that has the same name as the name specified in the defintion", function () {
-			assert.ok(rpcControlServer.torPool.instance_by_name('instance-2'));
+			assert.ok(rpcControlServer.tor_pool.instance_by_name('instance-2'));
 		});
 	});
 
@@ -123,11 +124,11 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('"instance-1" should be added to "baz"', function () {
-			assert.include(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+			assert.include(rpcControlServer.tor_pool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
 		});
 
 		after('remove from group', function () {
-			rpcControlServer.torPool.groups['baz'].remove_by_name('instance-1');
+			rpcControlServer.tor_pool.groups['baz'].remove_by_name('instance-1');
 		});
 	});
 
@@ -137,17 +138,17 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('"instance-1" should be added to "baz"', function () {
-			assert.include(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+			assert.include(rpcControlServer.tor_pool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
 		});
 
 		after('remove from group', function () {
-			rpcControlServer.torPool.groups['baz'].remove_by_name('instance-1');
+			rpcControlServer.tor_pool.groups['baz'].remove_by_name('instance-1');
 		});
 	});
 
 	describe('#removeInstanceFromGroupByName()', function () {
 		before('add to group', function () {
-			rpcControlServer.torPool.groups['baz'].add_by_name('instance-1');
+			rpcControlServer.tor_pool.groups['baz'].add_by_name('instance-1');
 		});
 
 		it(`should remove "instance-1" from baz`, async function () {
@@ -155,13 +156,13 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('"instance-1" should be remove from to "baz"', function () {
-			assert.notInclude(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+			assert.notInclude(rpcControlServer.tor_pool.group_names, "baz");
 		});
 	});
 
 	describe('#removeInstanceFromGroupAt()', function () {
 		before('add to group', function () {
-			rpcControlServer.torPool.groups['baz'].add_by_name('instance-1');
+			rpcControlServer.tor_pool.groups['baz'].add_by_name('instance-1');
 		});
 
 		it(`should remove "instance-1" from baz`, async function () {
@@ -169,10 +170,9 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('"instance-1" should be remove from to "baz"', function () {
-			assert.notInclude(rpcControlServer.torPool.instances_by_group('baz').map((i) => i.instance_name), "instance-1");
+			assert.notInclude(rpcControlServer.tor_pool.group_names, "baz");
 		});
 	});
-
 	
 	describe('#newIdentites()', function () {
 		this.timeout(3000);
@@ -209,7 +209,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('all instances should have the modified variables', async function() {
-			await Promise.all(rpcControlServer.torPool.instances.map(async (instance) => {
+			await Promise.all(rpcControlServer.tor_pool.instances.map(async (instance) => {
 				let var1 = await instance.get_config('TestSocks');
 				let var2 = await instance.get_config('ProtocolWarnings');
 
@@ -219,8 +219,8 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		after('unset config variables', async function () {
-			await rpcControlServer.torPool.set_config_all('TestSocks', 0);
-			await rpcControlServer.torPool.set_config_all('ProtocolWarnings', 0);
+			await rpcControlServer.tor_pool.set_config_all('TestSocks', 0);
+			await rpcControlServer.tor_pool.set_config_all('ProtocolWarnings', 0);
 		});
 	});
 
@@ -245,13 +245,13 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('all instances should have the config value set', async function () {
-			let values = _.flatten(await Promise.all(rpcControlServer.torPool.instances_by_group('foo').map((i) => i.get_config('ProtocolWarnings'))));
+			let values = _.flatten(await Promise.all(rpcControlServer.tor_pool.instances_by_group('foo').map((i) => i.get_config('ProtocolWarnings'))));
 
 			assert.isTrue(values.every((v) => v === "1"));
 		});
 
 		after('unset config values', async function () {
-			rpcControlServer.torPool.set_config_by_group('foo', 'ProtocolWarnings', 0);
+			rpcControlServer.tor_pool.set_config_by_group('foo', 'ProtocolWarnings', 0);
 		});
 	});
 
@@ -337,7 +337,7 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#getLoadBalanceMethod()', function () {
 		this.timeout(3000);
 		before(function () {
-			rpcControlServer.torPool.load_balance_method = 'round_robin';
+			rpcControlServer.tor_pool.load_balance_method = 'round_robin';
 		});
 
 		it('should return the current load balance method', async function () {
@@ -355,11 +355,11 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('the load balance method should be changed', function () {
-			assert.equal(rpcControlServer.torPool.load_balance_method, 'weighted');
+			assert.equal(rpcControlServer.tor_pool.load_balance_method, 'weighted');
 		});
 
 		after(function () {
-			rpcControlServer.torPool.load_balance_method = 'round_robin';
+			rpcControlServer.tor_pool.load_balance_method = 'round_robin';
 		});	
 	});
 
@@ -367,7 +367,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 
 		before('set config property', async function () {
-			await rpcControlServer.torPool.instance_by_name('instance-1').set_config('TestSocks', 1);
+			await rpcControlServer.tor_pool.instance_by_name('instance-1').set_config('TestSocks', 1);
 		});
 
 		it('should retrieve the property from the tor instance', async function () {
@@ -379,7 +379,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		after('unset config property', async function () {
-			await rpcControlServer.torPool.instance_by_name('instance-1').set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_by_name('instance-1').set_config('TestSocks', 0);
 		});
 	});
 
@@ -387,7 +387,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 
 		before('set config property', async function () {
-			await rpcControlServer.torPool.instance_at(0).set_config('TestSocks', 1);
+			await rpcControlServer.tor_pool.instance_at(0).set_config('TestSocks', 1);
 		});
 
 		it('should retrieve the property from the tor instance', async function () {
@@ -399,7 +399,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		after('unset config property', async function () {
-			await rpcControlServer.torPool.instance_at(0).set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_at(0).set_config('TestSocks', 0);
 		});
 	});
 
@@ -407,7 +407,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 
 		before('set config property', async function () {
-			await rpcControlServer.torPool.instance_by_name('instance-1').set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_by_name('instance-1').set_config('TestSocks', 0);
 		});
 
 		it('should set the property for the tor instance', async function () {
@@ -415,12 +415,12 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('tor instance should have the modified property', async function () {
-			let value = await rpcControlServer.torPool.instance_by_name('instance-1').get_config('TestSocks');
+			let value = await rpcControlServer.tor_pool.instance_by_name('instance-1').get_config('TestSocks');
 			assert.equal(value, 1);
 		});
 
 		after('unset config property', async function () {
-			await rpcControlServer.torPool.instance_by_name('instance-1').set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_by_name('instance-1').set_config('TestSocks', 0);
 		});
 	});
 
@@ -428,7 +428,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 
 		before('set config property', async function () {
-			await rpcControlServer.torPool.instance_at(0).set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_at(0).set_config('TestSocks', 0);
 		});
 
 		it('should set the property for the tor instance', async function () {
@@ -436,12 +436,12 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('tor instance should have the modified property', async function () {
-			let value = await rpcControlServer.torPool.instance_at(0).get_config('TestSocks');
+			let value = await rpcControlServer.tor_pool.instance_at(0).get_config('TestSocks');
 			assert.equal(value, 1);
 		});
 
 		after('unset config property', async function () {
-			await rpcControlServer.torPool.instance_at(0).set_config('TestSocks', 0);
+			await rpcControlServer.tor_pool.instance_at(0).set_config('TestSocks', 0);
 		});
 	});
 
@@ -476,31 +476,31 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 		let instance_name;
 		it('should rotate the 0th item in the instances array', async function () {
-			instance_name = rpcControlServer.torPool.instances[0].instance_name;
+			instance_name = rpcControlServer.tor_pool.instances[0].instance_name;
 			await rpcClient.invokeAsync('nextInstance', []);					
 		});
 
 		it('0th item in the instances array should be different after nextInstance is called', function () {
-			assert.notEqual(rpcControlServer.torPool.instances[0].instance_name, instance_name);
+			assert.notEqual(rpcControlServer.tor_pool.instances[0].instance_name, instance_name);
 		});
 	});
 
 	describe('#nextInstanceByGroup(group)', function () {
 		before('add "instance-1" to "foo"', function () {
-			rpcControlServer.torPool.add_instance_to_group_by_name('foo', 'instance-2');
+			rpcControlServer.tor_pool.add_instance_to_group_by_name('foo', 'instance-2');
 		});
 
 		it('should rotate the instances in group "foo"', async function () {
 			this.timeout(5000);
-			let first_instance_name_before = rpcControlServer.torPool.groups['foo'][0].instance_name;
+			let first_instance_name_before = rpcControlServer.tor_pool.groups['foo'][0].instance_name;
 			await rpcClient.invokeAsync('nextInstanceByGroup', [ 'foo' ]);		
-			let first_instance_name_after = rpcControlServer.torPool.groups['foo'][0].instance_name;
+			let first_instance_name_after = rpcControlServer.tor_pool.groups['foo'][0].instance_name;
 			
 			assert.notEqual(first_instance_name_after, first_instance_name_before);
 		});
 
 		after('remove "instance-1" from "foo"', function () {
-			rpcControlServer.torPool.remove_instance_from_group_by_name('foo', 'instance-2');
+			rpcControlServer.tor_pool.remove_instance_from_group_by_name('foo', 'instance-2');
 		})
 	});
 
@@ -508,41 +508,41 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#removeInstanceAt(index)', function () {
 		this.timeout(10000);
 		it("should remove an instance at the position specified", async function () {
-			instance_num1 = rpcControlServer.torPool.instances.length;
+			instance_num1 = rpcControlServer.tor_pool.instances.length;
 			await rpcClient.invokeAsync('removeInstanceAt', [0]);
 		});
 
 		it('the tor pool should contain one instance fewer', function () {
-			assert.equal(rpcControlServer.torPool.instances.length, (instance_num1 - 1));
+			assert.equal(rpcControlServer.tor_pool.instances.length, (instance_num1 - 1));
 		});
 	});
 
 	describe('#removeInstanceByName(instance_name)', function () {
 		this.timeout(10000);
 		it("should remove an instance at the position specified", async function () {
-			instance_num2 = rpcControlServer.torPool.instances.length;
+			instance_num2 = rpcControlServer.tor_pool.instances.length;
 			await rpcClient.invokeAsync('removeInstanceByName', [ "instance-1" ]);
 		});
 
 		it('the tor pool should contain one instance fewer', function () {
-			assert.equal(rpcControlServer.torPool.instances.length, (instance_num2 - 1));
+			assert.equal(rpcControlServer.tor_pool.instances.length, (instance_num2 - 1));
 		});
 	});
 
 	describe('#closeInstances()', function () {
 		this.timeout(10000);
 		it('should shutdown all instances', async function () {
-			instance_num = rpcControlServer.torPool.instances.length;
+			instance_num = rpcControlServer.tor_pool.instances.length;
 			await rpcClient.invokeAsync('closeInstances', [ ]);	
 		});
 
 		it('no instances should be present in the pool', function () {
-			assert.equal(rpcControlServer.torPool.instances.length, 0);
+			assert.equal(rpcControlServer.tor_pool.instances.length, 0);
 		});
 	});
 
 	after('shutdown tor pool', async function () {
 		this.timeout(10000);
-		await rpcControlServer.torPool.exit();
+		await rpcControlServer.tor_pool.exit();
 	});	
 });

@@ -1,4 +1,5 @@
-const nconf = require('nconf');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const { assert } = require('chai');
 const _ = require('lodash');
 

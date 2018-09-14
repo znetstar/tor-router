@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const nconf = require('nconf');
+const { Provider } = require('nconf');
 const yargs = require('yargs');
 const winston = require('winston')
 const Promise = require('bluebird');
@@ -10,20 +10,46 @@ const default_ports = require('./default_ports');
 
 const package_json = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, 'utf8'));
 
+/** 
+ * @typedef Host
+ * @property {string} hostname - The hostname
+ * @property {number} port - The port
+ * @private 
+ */
+
+/**
+ * Extracts the host and port components from a string
+ * @param {string} host
+ * @returns {Host} 
+ * @private
+ */
 function extractHost (host) {
     if (typeof(host) === 'number')
-        return { hostname: (typeof(default_ports.default_host) === 'string' ? default_ports.default_host : '0.0.0.0'), port: host };
+        return { hostname: (typeof(default_ports.default_host) === 'string' ? default_ports.default_host : ''), port: host };
     else if (typeof(host) === 'string' && host.indexOf(':') !== -1)
         return { hostname: host.split(':').shift(), port: Number(host.split(':').pop()) };
     else
         return null;
 }
 
+/**
+ * Takes an object with a hostname and port returns a formatted string 
+ * @param {Host} host 
+ * @returns {string} - Formatted host (e.g. "0.0.0.0:1234")
+ */
 function assembleHost(host) {
     return `${typeof(host.hostname) === 'string' ? host.hostname : '' }:${host.port}`;
 }
 
+/**
+ * Main function for the application
+ * @param {Provider} nconf - Instance of `nconf.Provider` used for configuration.
+ * @param {Logger} [logger] - Winston logger to be used for logging. If not provided will disable logging.
+ * @async
+ * @returns {Promise}
+ */
 async function main(nconf, logger) {
+    Promise.promisifyAll(nconf);
     let instances = nconf.get('instances');
     let socks_host = typeof(nconf.get('socksHost')) !== 'boolean' ? extractHost(nconf.get('socksHost')) : nconf.get('socksHost');
     let dns_host  = typeof(nconf.get('dnsHost')) !== 'boolean' ? extractHost(nconf.get('dnsHost')) : nconf.get('dnsHost');
@@ -44,7 +70,7 @@ async function main(nconf, logger) {
         nconf.set('websocketControlPort', assembleHost(control_host_ws));
     }
 
-    let control = new ControlServer(logger, nconf);
+    let control = new ControlServer(nconf, logger);
 
     try {
         await control.listenTcp(control_host.port, control_host.hostname);
@@ -80,7 +106,7 @@ async function main(nconf, logger) {
         if (instances) {
             logger.info(`[tor]: starting ${Array.isArray(instances) ? instances.length : instances} tor instance(s)...`);
 
-            await control.torPool.create(instances);
+            await control.tor_pool.create(instances);
 
             logger.info('[tor]: tor started');
         }
@@ -89,11 +115,17 @@ async function main(nconf, logger) {
         process.exit(1);
     }
 
+    /**
+     * Kills all tor processes and exits, logging an error if one occurs.
+     * @function cleanUp 
+     * 
+     * @param {Error} error - Error or exit code
+     */
     const cleanUp = (async (error) => {
         let thereWasAnExitError = false;
         let { handleError } = this;
         try {
-            await control.torPool.exit();
+            await control.tor_pool.exit();
         } catch (exitError) {
             logger.error(`[global]: error closing tor instances: ${exitError.message}`);
             thereWasAnExitError = true;
@@ -111,13 +143,19 @@ async function main(nconf, logger) {
     process.title = 'tor-router';
 
     process.on('SIGHUP', () => {
-        control.torPool.new_identites();
+        control.tor_pool.new_identites();
     });
 
     process.on('exit', cleanUp);
     process.on('SIGINT', cleanUp);
     process.on('uncaughtException', cleanUp.bind({ handleError: true }));
 }
+
+/**
+ * Instance of `nconf.Provider`
+ * @type {Provider}
+ */
+let nconf = new Provider();
 
 let argv_config = 
     yargs
@@ -190,8 +228,6 @@ let argv_config =
         }
     });
 
-Promise.promisifyAll(nconf);
-
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);
 nconf
     .argv(argv_config);
@@ -211,6 +247,10 @@ nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 
 let logLevel = nconf.get('logLevel');
 
+/**
+ * Instnace of `winston.Logger`
+ * @type {Logger}
+ */
 let logger = winston.createLogger({
     level: logLevel,
     format: winston.format.simple(),
@@ -218,4 +258,8 @@ let logger = winston.createLogger({
     transports: [ new (winston.transports.Console)({ level: (logLevel !== 'null' ? logLevel : void(0)), silent: (logLevel === 'null') }) ]
 });
 
+/**
+ * Exports the main function for the application, a configured `nconf.Provider` instance and a winston logger
+ * @module tor-router/launch
+ */
 module.exports = { main, nconf, logger };

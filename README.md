@@ -49,7 +49,7 @@ For example: `tor-router -j 3 -s 127.0.0.1:9050` would start the proxy with 3 to
 
 For detailed examples and insturctions on using Tor Router [see the wiki](https://github.com/znetstar/tor-router/wiki).
 
-To generate API documentation run `npm run doc`. The documentation will be available in `doc/`. 
+To generate API documentation run `npm run docs`. The documentation will be available in `docs/`. 
 
 ## Testing
 

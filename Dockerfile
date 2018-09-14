@@ -26,11 +26,7 @@ ADD . /app
 
 ENV HOME /home/tor_router
 
-EXPOSE 9050
-
-EXPOSE 9053
-
-EXPOSE 9077
+EXPOSE 9050 9053 9077
 
 ENTRYPOINT [ "tor-router" ]
 

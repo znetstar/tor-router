@@ -1,11 +1,19 @@
-const nconf = require('nconf');
-const request = require('request-promise');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const getPort = require('get-port');
 const { assert } = require('chai');
 const _ = require('lodash');
+const Promise = require('bluebird');
 
-const { TorPool, HTTPServer } = require('../');
-const { WAIT_FOR_CREATE, PAGE_LOAD_TIME } = require('./constants');
+const { TorPool, HTTPServer, TorProcess } = require('../');
+const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS  } = require('./constants');
+
+const request = require('requestretry').defaults({
+	promiseFactory: ((resolver) => new Promise(resolver)),
+	maxAttempts: MAX_ATTEMPTS,
+	retryStrategy: RETRY_STRATEGY,
+	retryDelay: RETRY_DELAY
+});
 
 nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
@@ -39,6 +47,29 @@ describe('HTTPServer', function () {
 			});
 		});
 
+		it('should emit the "instance_connection" event', function (done) {
+			this.timeout(PAGE_LOAD_TIME);
+
+			let connectionHandler = (instance, source) => {
+				assert.instanceOf(instance, TorProcess);
+				assert.isObject(source);
+				
+				httpServer.removeAllListeners('instance_connection');;
+				done();
+			};
+
+			httpServer.on('instance_connection', connectionHandler);
+
+			request({
+				url: 'http://example.com',
+				proxy: `http://127.0.0.1:${httpPort}`
+			})
+			.catch((err) => {
+
+			})
+		});
+
+
 		after('shutdown server', function () {
 			httpServer.close();
 		});
@@ -48,7 +79,7 @@ describe('HTTPServer', function () {
 		});
 
 	});
-
+	return
 	describe('#handle_connect_connections(req, inbound_socket, head)', function () {
 		let httpServerTorPool;
 		let httpServer;
@@ -70,8 +101,30 @@ describe('HTTPServer', function () {
 			this.timeout(PAGE_LOAD_TIME);
 
 			await request({
-				url: 'http://example.com',
+				url: 'https://example.com',
 				proxy: `http://127.0.0.1:${httpPort}`
+			});
+		});
+
+		it('should emit the "instance_connection" event', function (done) {
+			this.timeout(PAGE_LOAD_TIME);
+
+			let connectionHandler = (instance, source) => {
+				assert.instanceOf(instance, TorProcess);
+				assert.isObject(source);
+			
+				httpServer.removeAllListeners('instance_connection');;
+				done();
+			};
+
+			httpServer.on('instance_connection', connectionHandler);
+
+			request({
+				url: 'https://example.com',
+				proxy: `http://127.0.0.1:${httpPort}`
+			})
+			.catch((error) => {
+
 			});
 		});
 
@@ -117,11 +170,11 @@ describe('HTTPServer', function () {
 				assert.isTrue(source.by_name);
 				
 				req.cancel();
-				httpServer.removeAllListeners('instance-connection');;
+				httpServer.removeAllListeners('instance_connection');;
 				done();
 			};
 
-			httpServer.on('instance-connection', connectionHandler);
+			httpServer.on('instance_connection', connectionHandler);
 
 			req = request({
 				url: 'http://example.com',
@@ -129,8 +182,7 @@ describe('HTTPServer', function () {
 			})
 			.catch(done)
 		});
-
-
+		
 		it(`four requests made to example.com through the group named "foo" should come from the instances in "foo"`, function (done) {
 			(async () => {
 				this.timeout(PAGE_LOAD_TIME + (WAIT_FOR_CREATE));
@@ -145,8 +197,6 @@ describe('HTTPServer', function () {
 			.then(async () => {
 				httpServer.proxy_by_name.mode = "group";
 
-				let request = require('request-promise').defaults({ proxy: `http://foo:@127.0.0.1:${httpPort}` });
-
 				let names_requested = [];
 
 				let connectionHandler = (instance, source) => {
@@ -158,17 +208,18 @@ describe('HTTPServer', function () {
 						let names_in_group = httpServerTorPool.instances_by_group('foo').map((i) => i.instance_name).sort()
 
 						assert.deepEqual(names_requested, names_in_group);
-						httpServer.removeAllListeners('instance-connection');
+						httpServer.removeAllListeners('instance_connection');
 						done();
 					}
 				};
 
-				httpServer.on('instance-connection', connectionHandler);
+				httpServer.on('instance_connection', connectionHandler);
 
 				let i = 0;
 				while (i < httpServerTorPool.instances.length) {
 					await request({
-						url: 'http://example.com'
+						url: 'http://example.com',
+						proxy: `http://foo:@127.0.0.1:${httpPort}`
 					});
 					i++;
 				}
@@ -183,11 +234,13 @@ describe('HTTPServer', function () {
 		it(`shouldn't be able to send a request without a username`, async function() {
 			let f = () => {};
 			try {
-				await request({
+				let res =  await request({
 					url: 'http://example.com',
-					proxy: `https://127.0.0.1:${httpPort}`,
+					proxy: `http://127.0.0.1:${httpPort}`,
 					timeout: PAGE_LOAD_TIME
 				});
+				if (res.statusCode === 407) 
+					throw new Error('407');
 			} catch (error) {
 				f = () => { throw error };
 			} finally {
@@ -198,11 +251,14 @@ describe('HTTPServer', function () {
 		it(`shouldn't be able to send a request with an incorrect username`, async function() {
 			let f = () => {};
 			try {
-				await request({
+				let res = await request({
 					url: 'http://example.com',
 					proxy: `http://blah-blah-blah:@127.0.0.1:${httpPort}`,
-					timeout: PAGE_LOAD_TIME
+					timeout: PAGE_LOAD_TIME,
+					fullResponse: true
 				});
+				if (res.statusCode === 407) 
+					throw new Error('407');
 			} catch (error) {
 				f = () => { throw error };
 			} finally {
@@ -218,7 +274,7 @@ describe('HTTPServer', function () {
 			await httpServerTorPool.exit();
 		});
 	});
-
+	
 	describe('#authenticate_user_connect(req, socket)', function () {
 		let httpServerTorPool;
 		let httpServer;
@@ -250,11 +306,11 @@ describe('HTTPServer', function () {
 				assert.equal(instance.instance_name, instance_def.Name);
 				assert.isTrue(source.by_name);
 				req.cancel();
-				httpServer.removeAllListeners('instance-connection');
+				httpServer.removeAllListeners('instance_connection');
 				done();
 			};
 
-			httpServer.on('instance-connection', connectionHandler);
+			httpServer.on('instance_connection', connectionHandler);
 
 			req = request({
 				url: 'https://example.com',
@@ -290,12 +346,12 @@ describe('HTTPServer', function () {
 						let names_in_group = httpServerTorPool.instances_by_group('foo').map((i) => i.instance_name).sort()
 
 						assert.deepEqual(names_requested, names_in_group);
-						httpServer.removeAllListeners('instance-connection');
+						httpServer.removeAllListeners('instance_connection');
 						done();
 					}
 				};
 
-				httpServer.on('instance-connection', connectionHandler);
+				httpServer.on('instance_connection', connectionHandler);
 
 				let i = 0;
 				while (i < httpServerTorPool.instances.length) {
@@ -323,7 +379,7 @@ describe('HTTPServer', function () {
 			} catch (error) {
 				f = () => { throw error };
 			} finally {
-				assert.throws(f, "socket hang up", "Did not hang up");
+				assert.throws(f, "statusCode=407", "Did not return 407 status code");
 			}
 		});
 
@@ -338,7 +394,7 @@ describe('HTTPServer', function () {
 			} catch (error) {
 				f = () => { throw error };
 			} finally {
-				assert.throws(f, "socket hang up", "Did not hang up");
+				assert.throws(f, "statusCode=407", "Did not hang up");
 			}
 		});
 

@@ -5,7 +5,7 @@ const crypto = require('crypto');
 const { connect } = require('net');
 const os = require('os');
 
-const Promise = require('bluebird');
+const Promise = require('bluebird');	
 const _ = require('lodash');
 const { EventEmitter } = require('eventemitter3');
 const shell = require('shelljs');
@@ -36,7 +36,7 @@ temp.track();
  */
 class TorProcess extends EventEmitter {
 	/**
-	 * Creates an instance of TorProcess
+	 * Creates an instance of `TorProcess`
 	 * 
 	 * @param {string} tor_path - Path to the Tor executable.
 	 * @param {InstanceDefinition} [definition] - Object containing various options for the instance. See {@link InstanceDefinition} for more info.
@@ -45,7 +45,7 @@ class TorProcess extends EventEmitter {
 	 */
 	constructor(tor_path, definition, granax_options, logger) {
 		super();
-		this.logger = logger || require('./winston-silent-logger');
+		this.logger = logger || require('./winston_silent_logger');
 
 		definition = definition || {};
 		definition.Group = definition.Group ? [].concat(definition.Group) : [];
@@ -305,7 +305,6 @@ class TorProcess extends EventEmitter {
 
 		tor.stderr.on('data', (data) => {
 			let error_message = Buffer.from(data).toString('utf8');
-
 			this.emit('error', new Error(error_message));
 		});
 
@@ -315,29 +314,42 @@ class TorProcess extends EventEmitter {
 			this.logger.info(`[tor-${this.instance_name}]: tor is ready`);
 		});
 
-		this.on('control_listen', () => {
-			this._controller = new TorController(connect(this._control_port), _.extend({ authOnConnect: false }, this.granax_options));
-			Promise.promisifyAll(this._controller);
-
-			this.controller.on('ready', () => {
-				this.logger.debug(`[tor-${this.instance_name}]: connected to tor control port`);
-				this.controller.authenticate(`"${this.control_password}"`, (err) => {
-					if (err) {
-						this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
-						this.emit('error', err);
-					} else {
-						this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
-						this.control_port_connected = true;
-						/**
-						 * An event that fires when a connection has been established to the control protocol.
-						 * 
-						 * @event TorProcess#controller_ready
-						 */
-						this.emit('controller_ready');
-					}
+		this.on('control_listen', (async () => {
+			try {
+				let socket = connect(this.control_port);
+				socket.on('error', ((error) => {
+					this.logger.error(`[tor-${this.instance_name}]: ${error.stack}`);
+					this.emit('error', error);
+				}));
+				this._controller = new TorController(socket, _.extend({ authOnConnect: false }, this.granax_options));
+				Promise.promisifyAll(this._controller);
+				this.controller.on('ready', () => {
+					this.logger.debug(`[tor-${this.instance_name}]: connected via the tor control protocol`);
+					this.controller.authenticate(`"${this.control_password}"`, (err) => {
+						if (err) {
+							this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
+							this.emit('error', err);
+						} else {
+							this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control protocol`);
+							/** 
+							 * Is true when the connected via the control protcol
+							 * @type {boolean}
+							 */
+							this.control_port_connected = true;
+							/**
+							 * An event that fires when a connection has been established to the control protocol.
+							 * 
+							 * @event TorProcess#controller_ready
+							 */
+							this.emit('controller_ready');
+						}
+					});
 				});
-			});
-		});
+			} catch (error) {
+				this.logger.error(`[tor-${this.instance_name}]: ${err.stack}`);
+				this.emit('error', err);
+			}
+		}));
 
 		tor.stdout.on('data', (data) => {
 			let text = Buffer.from(data).toString('utf8');
@@ -373,18 +385,18 @@ class TorProcess extends EventEmitter {
 			}
 
 			if (text.indexOf('Opening DNS listener on') !== -1) {
+				this.dns_port_listening = true;
 				/**
 				 * An event that fires when the Tor process has started listening for DNS traffic.
 				 * 
 				 * @event TorProcess#dns_listen
 				 */
-				this.dns_port_listening = true;
 				this.emit('dns_listen');
 			}
 
 			if (text.indexOf('[err]') !== -1) {
 				/**
-				 * An event that fires the Tor process has written an error to stdout or stderr or an error occured connecting to the control protocol.
+				 * An event that fires when the Tor process has written an error to stdout, stderr or when an error occurs connecting via the control protocol.
 				 * 
 				 * @event TorProcess#error
 				 * @type {Error}
@@ -409,4 +421,9 @@ class TorProcess extends EventEmitter {
 	}
 };
 
+/**
+ * Module that contains the {@link TorProcess} class.
+ * @module tor-router/TorProcess
+ * @see TorProcess
+ */
 module.exports = TorProcess;

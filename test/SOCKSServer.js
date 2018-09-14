@@ -1,12 +1,20 @@
-const nconf = require('nconf');
-const request = require('request-promise');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const getPort = require('get-port');
 const { HttpAgent, auth } = require('socksv5');
 const { assert } = require('chai');
+const SocksProxyAgent = require('socks-proxy-agent');
 const _ = require('lodash');
 
-const { TorPool, SOCKSServer } = require('../');
-const { WAIT_FOR_CREATE, PAGE_LOAD_TIME } = require('./constants');
+const { TorPool, SOCKSServer, TorProcess } = require('../');
+const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS } = require('./constants');
+
+const request = require('requestretry').defaults({
+	promiseFactory: ((resolver) => new Promise(resolver)),
+	maxAttempts: MAX_ATTEMPTS,
+	retryStrategy: RETRY_STRATEGY,
+	retryDelay: RETRY_DELAY
+});
 
 nconf.use('memory');
 require(`${__dirname}/../src/nconf_load_env.js`)(nconf);		
@@ -21,7 +29,7 @@ describe('SOCKSServer', function () {
 		before('start up server', async function (){
 			socksServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
 			socksServer = new SOCKSServer(socksServerTorPool, null, false);
-	
+
 			this.timeout(WAIT_FOR_CREATE);
 	
 			await socksServerTorPool.create(1);
@@ -29,25 +37,37 @@ describe('SOCKSServer', function () {
 	
 			await socksServer.listen(socksPort);
 		});
+
 		it('should service a request for example.com', async function () {
 			this.timeout(PAGE_LOAD_TIME);
 
 			await request({
 				url: 'http://example.com',
-				agent: new HttpAgent({
-					proxyHost: '127.0.0.1',
-					proxyPort: socksPort,
-					localDNS: false,
-					auths: [ auth.None() ]
-				})
+				agent: new SocksProxyAgent(`socks5h://127.0.0.1:${socksPort}`)
 			});
 		});
 
-		after('shutdown server', function () {
-			socksServer.close();
+		it('should emit the "instance_connection" event', function (done) {
+			this.timeout(PAGE_LOAD_TIME);
+
+			let connectionHandler = (instance, source) => {
+				assert.instanceOf(instance, TorProcess);
+				assert.isObject(source);
+				
+				socksServer.removeAllListeners('instance_connection');;
+				done();
+			};
+
+			socksServer.on('instance_connection', connectionHandler);
+
+			request({
+				url: 'http://example.com',
+				agent: new SocksProxyAgent(`socks5h://127.0.0.1:${socksPort}`)
+			})
+			.catch(done)
 		});
 
-		after('shutdown tor pool', async function () {
+		after('shutdown server and shutdown tor pool', async function () {
 			socksServer.close();
 			await socksServerTorPool.exit();
 		});
@@ -79,28 +99,22 @@ describe('SOCKSServer', function () {
 		it(`should service a request for example.com through ${instance_def.Name}`, function (done) {
 			this.timeout(PAGE_LOAD_TIME);
 
-			let req;
 			let connectionHandler = (instance, source) => {
 				assert.equal(instance.instance_name, instance_def.Name);
 				assert.isTrue(source.by_name);
-				req.cancel();
-				socksServer.removeAllListeners('instance-connection');
+				socksServer.removeAllListeners('instance_connection');
 				done();
 			};
 
-			socksServer.on('instance-connection', connectionHandler);
-
-			req = request({
+			socksServer.on('instance_connection', connectionHandler);
+			request({
 				url: 'http://example.com',
-				agent: new HttpAgent({
-					proxyHost: '127.0.0.1',
-					proxyPort: socksPort,
-					localDNS: false,
-					auths: [ auth.UserPassword(instance_def.Name, "doesn't mater") ]
-				})
+				agent: new SocksProxyAgent(`socks5h://${instance_def.Name}:doesnotmatter@127.0.0.1:${socksPort}`)
 			})
 			.catch(done);
 		});
+
+		return
 
 		it(`four requests made to example.com through the group named "foo" should come from the instances in "foo"`, function (done) {
 			(async () => {
@@ -116,15 +130,6 @@ describe('SOCKSServer', function () {
 			.then(async () => {
 				socksServer.proxy_by_name.mode = "group";
 
-				let request = require('request-promise').defaults({ 
-					agent: new HttpAgent({
-						proxyHost: '127.0.0.1',
-						proxyPort: socksPort,
-						localDNS: false,
-						auths: [ auth.UserPassword('foo', "doesn't mater") ]
-					})
-				 });
-
 
 				let names_requested = [];
 
@@ -137,17 +142,18 @@ describe('SOCKSServer', function () {
 						let names_in_group = socksServerTorPool.instances_by_group('foo').map((i) => i.instance_name).sort()
 
 						assert.deepEqual(names_requested, names_in_group);
-						socksServer.removeAllListeners('instance-connection');
+						socksServer.removeAllListeners('instance_connection');
 						done();
 					}
 				};
 
-				socksServer.on('instance-connection', connectionHandler);
+				socksServer.on('instance_connection', connectionHandler);
 
 				let i = 0;
 				while (i < socksServerTorPool.instances.length) {
 					await request({
-						url: 'http://example.com'
+						url: 'http://example.com',
+						agent: new SocksProxyAgent(`socks5h://foo:doesnotmatter@127.0.0.1:${socksPort}`)
 					});
 					i++;
 				}
@@ -199,11 +205,8 @@ describe('SOCKSServer', function () {
 		// 	}
 		// });
 
-		after('shutdown server', function () {
+		after('shutdown server and shutdown tor pool', async function () {
 			socksServer.close();
-		});
-
-		after('shutdown tor pool', async function () {
 			await socksServerTorPool.exit();
 		});
 	});

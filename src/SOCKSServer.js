@@ -2,7 +2,44 @@ const socks = require('socksv5');
 const Promise = require('bluebird');
 const { Server } = socks;
 
+/** 
+ * Configuration for the "proxy by name" feature (connecting to specific instances or groups of instances using the username field when connecting).
+ * @typedef ProxyByNameConfig
+ * 
+ * @property {boolean} [deny_unidentified_users=false] - Deny unauthenticated (e.g. no username - socks://my-server:9050) users access to the proxy server.
+ * @property {string} mode - Either "group" for routing to a group of instances or "individual" for routing to individual instances.
+ */
+
+/**
+ * Details on the source of a connection the proxy server.
+ * @typedef InstanceConnectionSource
+ * @property {string} hostname - Hostname where the connection was made from.
+ * @property {number} port - Port where the connection was made from.
+ * @property {boolean} by_name - Indicates whether the connection was made using a username (made to a specific instance or group of instances).
+ * @property {string} proto - The protocol of the connection "socks", "http", "http-connect" or "dns"
+ */
+
+/**
+ * A SOCKS5 proxy server that will route requests to instances in the TorPool provided.
+ * @extends Server
+ */
 class SOCKSServer extends Server{
+	/**
+	 * Callback for `authenticate_user`.
+	 * @callback SOCKSServer~authenticate_user_callback
+	 * @param {boolean} allow - Indicates if the connection should be allowed.
+	 * @param {boolean} user - Indicates if the connection should have a session (authentication was successful).
+	 */
+
+	/**
+	 * Binds the server to a port and IP Address.
+	 * 
+	 * @async
+	 * @param {number} port - The port to bind to.
+	 * @param {string} [host="::"] - Address to bind to. Will default to :: or 0.0.0.0 if not specified.
+	 * @returns {Promise}
+	 * 
+	*/
 	async listen() {
 		return await new Promise((resolve, reject) => {
 			let args = Array.from(arguments);
@@ -15,6 +52,14 @@ class SOCKSServer extends Server{
 		});
 	}
 
+	/**
+	 * Retrieves an instance from the pool or an instance from a group by the name provided.
+	 * @param {string} username - Name of the group or instance to route to.
+	 * @returns {TorProcess}
+	 * @throws If {@link SOCKSServer#proxy_by_name} is set to an invalid value.
+	 * @throws If the name of the instance or group provided is invalid.
+	 * @private
+	 */
 	get_instance_pbn(username) {
 		if (this.proxy_by_name.mode === 'individual') 
 			return this.tor_pool.instance_by_name(username);
@@ -24,6 +69,14 @@ class SOCKSServer extends Server{
 			throw Error(`Unknown "proxy_by_name" mode ${this.proxy_by_name.mode}`);
 	}
 
+	/**
+	 * Checks the username provided against all groups (for "group" mode) or all instances (for "individual" mode).
+	 * @param {string} username 
+	 * @param {string} password 
+	 * @param {SOCKSServer~authenticate_user_callback} callback - Callback for `authenticate_user`.
+	 * @throws If {@link SOCKSServer#proxy_by_name} is invalid.
+	 * @private
+	 */
 	authenticate_user(username, password, callback) {
 		let deny_un = this.proxy_by_name.deny_unidentified_users;
 		
@@ -45,8 +98,23 @@ class SOCKSServer extends Server{
 		callback(true, true);
 	}
 
+	/**
+	 * Creates an instance of `SOCKSServer`.
+	 * @param {TorPool} tor_pool - The pool of instances that will be used for requests
+	 * @param {Logger} [logger] - Winston logger that will be used for logging. If not specified will disable logging.
+	 * @param {ProxyByNameConfig} [proxy_by_name] - Enable routing to specific instances or groups of instances using the username field (socks://instance-1:@my-server:9050) when connecting.  
+	 */
 	constructor(tor_pool, logger, proxy_by_name) {
-		let handleConnection = (info, accept, deny) => {
+		/**
+		 * Handles SOCKS5 inbound connections.
+		 * 
+		 * @function handle_connections
+		 * @param {object} info - Information about the inbound connection.
+		 * @param {Function} accept - Callback that allows the connection.
+		 * @param {Function} deny - Callback that denies the connection.
+		 * @private
+		 */
+		const handle_connections = (info, accept, deny) => {
 			let inbound_socket = accept(true);
 			let instance;
 
@@ -77,8 +145,6 @@ class SOCKSServer extends Server{
 			let connect = (tor_instance) => {
 				let source = { hostname: info.srcAddr, port: info.srcPort, proto: 'socks', by_name: Boolean(instance) };
 				let socks_port = tor_instance.socks_port;
-				this.emit('instance-connection', tor_instance, source);
-				this.logger.verbose(`[socks]: ${source.hostname}:${source.port} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
 
 				socks.connect({
 					host: info.dstAddr,
@@ -88,6 +154,16 @@ class SOCKSServer extends Server{
 					localDNS: false,
 					auths: [ socks.auth.None() ]
 				}, ($outbound_socket) => {
+					/**
+					 * Fires when the proxy has made a connection through an instance.
+					 * 
+					 * @event SOCKSServer#instance-connection
+					 * @param {TorProcess} instance - Instance that has been connected to.
+					 * @param {InstanceConnectionSource} source - Details on the source of the connection.
+					 */
+					this.emit('instance_connection', tor_instance, source);
+					this.logger.verbose(`[socks]: ${source.hostname}:${source.port} → 127.0.0.1:${socks_port}${tor_instance.definition.Name ? ' ('+tor_instance.definition.Name+')' : '' } → ${info.dstAddr}:${info.dstPort}`)
+
 					outbound_socket = $outbound_socket;
 					outbound_socket && outbound_socket.on('close', onClose);
 
@@ -123,9 +199,8 @@ class SOCKSServer extends Server{
 				this.logger.debug(`[socks]: a connection has been attempted, but no tor instances are live... waiting for an instance to come online`);
 				this.tor_pool.once('instance_created', connect);
 			}
-		};
-
-		super(handleConnection);
+		}
+		super(handle_connections);
 
 		let auth = socks.auth.None();
 		
@@ -135,11 +210,34 @@ class SOCKSServer extends Server{
 
 		this.useAuth(auth);
 		
-		this.logger = logger || require('./winston-silent-logger');
+		/**
+		 *  Winston logger to use. 
+		 * 
+		 * @type {Logger}
+		 * @public  
+		 */
+		this.logger = logger || require('./winston_silent_logger');
+		/**
+		 *  Pool of instances use to service requests.
+		 * 
+		 * @type {TorPool}
+		 * @public  
+		 */
 		this.tor_pool = tor_pool;
+		/**
+		 *  Configuration for the "proxy by name" feature.
+		 * 
+		 * @type {ProxyByNameConfig}
+		 * @public  
+		 */
 		this.proxy_by_name = proxy_by_name;
 		this.logger.debug(`[socks]: connecting to a specific instance by name has ben turned ${proxy_by_name ? 'on' : 'off'}`);
 	}
 };
 
+/**
+ * Module that contains the {@link SOCKSServer} class.
+ * @module tor-router/SOCKSServer
+ * @see SOCKSServer
+ */
 module.exports = SOCKSServer;

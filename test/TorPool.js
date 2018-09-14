@@ -1,4 +1,5 @@
-const nconf = require('nconf');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const { assert } = require('chai');
 const Promise = require('bluebird');
 const _ = require('lodash');
@@ -605,10 +606,10 @@ describe('TorPool', function () {
 			torPool = torPoolFactory(); 
 
 			this.timeout(WAIT_FOR_CREATE);
-			await torPool.create(1);
+			await torPool.create([ { "Name": "instance-1", "Group": ["foo"] }, { "Name": "instance-2", "Group": ["foo"] } ]);
 		});
 
-		it('should send a signal to an instance identified by name', async function () {
+		it('should send a signal to a group of instances', async function () {
 			this.timeout(5000);
 			await torPool.signal_by_group('foo', 'DEBUG');
 		});

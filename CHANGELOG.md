@@ -3,7 +3,7 @@
 ## [4.0.2] - 2018-09-13
 
 ### Added
-- Adds API documentation. To generate run `npm run doc` and open under `doc/index.html`
+- Adds API documentation. To generate run `npm run docs` and open under `docs/index.html`
 
 ### Changed
 - Much of the README has been moved to [the wiki](https://github.com/znetstar/tor-router/wiki)

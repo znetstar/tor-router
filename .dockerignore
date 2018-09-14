@@ -7,4 +7,4 @@ docker-compose.yml
 README.md
 .vscode
 .DS_Store
-doc
+docs

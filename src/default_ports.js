@@ -1,3 +1,7 @@
+/**
+ * This module cotains the default ports the application will bind to.
+ * @module tor-router/default_ports
+ */
 module.exports = Object.freeze({
     socks: 9050,
     http: 9080,

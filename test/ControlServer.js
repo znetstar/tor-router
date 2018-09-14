@@ -1,7 +1,8 @@
 
 const _ = require('lodash');
 const { assert } = require('chai');
-const nconf = require('nconf');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const getPort = require('get-port');
 
 nconf.use('memory');
@@ -9,7 +10,7 @@ require(`${__dirname}/../src/nconf_load_env.js`)(nconf);
 nconf.defaults(require(`${__dirname}/../src/default_config.js`));
 const { ControlServer, TorPool, HTTPServer, SOCKSServer, DNSServer } = require('../');
 
-let controlServer = new ControlServer(null, nconf);
+let controlServer = new ControlServer(nconf);
 let controlPort;
 
 describe('ControlServer', function () {
@@ -23,7 +24,7 @@ describe('ControlServer', function () {
 		it('should create a TorPool with a given configuration', function () {
 			let torPool = controlServer.createTorPool({ ProtocolWarnings: 1 });
 
-			assert.instanceOf(controlServer.torPool, TorPool);
+			assert.instanceOf(controlServer.tor_pool, TorPool);
 			assert.equal(1, torPool.default_tor_config.ProtocolWarnings);
 		});
 	});
@@ -56,6 +57,6 @@ describe('ControlServer', function () {
 	});
 
 	after('shutdown tor pool', async function () {
-		await controlServer.torPool.exit();
+		await controlServer.tor_pool.exit();
 	});
 });

@@ -1,9 +1,11 @@
 
-const nconf = require('nconf');
+const { Provider } = require('nconf');
+const nconf = new Provider();
 const getPort = require('get-port');
 const dns = require('native-dns');
+const { assert } = require('chai');
 
-const { TorPool, DNSServer } = require('../');
+const { TorPool, DNSServer, TorProcess } = require('../');
 const { WAIT_FOR_CREATE } = require('./constants');
 
 nconf.use('memory');
@@ -14,7 +16,7 @@ let dnsServerTorPool;
 let dnsServer;
 describe('DNSServer', function () {
 	dnsServerTorPool = new TorPool(nconf.get('torPath'), {}, nconf.get('parentDataDirectory'), 'round_robin', null);
-	dnsServer = new DNSServer(dnsServerTorPool, {}, 10000);
+	dnsServer = new DNSServer(dnsServerTorPool, {}, nconf.get('dns:timeout'));
 	let dnsPort;
 	before('start up server', async function (){
 		this.timeout(WAIT_FOR_CREATE);
@@ -44,6 +46,31 @@ describe('DNSServer', function () {
 
 			req.on('message', function () {
 				done();
+			});
+
+			req.send();
+		});
+
+		it('should emit the "instance_connection" event', function (done) {
+			this.timeout(10000);
+
+			dnsServer.on('instance_connection', (instance, source) => {
+				assert.instanceOf(instance, TorProcess);
+				assert.isObject(source);
+				done();
+			});
+
+			let req = dns.Request({
+				question: dns.Question({
+					name: 'example.com',
+					type: 'A'
+				}),
+				server: { address: '127.0.0.1', port: dnsPort, type: 'udp' },
+				timeout: 10000,
+			});
+
+			req.on('timeout', function () {
+				done(new Error('Connection timed out'));
 			});
 
 			req.send();
