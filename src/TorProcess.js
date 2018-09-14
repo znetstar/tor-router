@@ -16,24 +16,32 @@ const temp = require('temp');
 const { TorController } = require('granax');
 const nanoid = require("nanoid");
 const winston = require('winston');
-winston.
 Promise.promisifyAll(temp);
 Promise.promisifyAll(fs);
 
 temp.track();
 
 /**
+ * @typedef {Object} InstanceDefinition
+ * @property {string} [Name] - Name of the instance.
+ * @property {string[]|string} [Group=[]] - Groups the instance belongs to.
+ * @property {Object} [Config={}] - Configuration that will be passed to Tor. See {@link https://bit.ly/2QrmI3o|Tor Documentation} for all possible options.
+ * @property {Number} [Weight] - Weight of the instance for "weighted" load balancing.
+ */
+
+/**
  * Class that represents an individual Tor process.
+ * 
  * @extends EventEmitter
  */
 class TorProcess extends EventEmitter {
 	/**
-	 * Creates a TorProcess Object
+	 * Creates an instance of TorProcess
 	 * 
-	 * @param {String} tor_path - Path to the Tor executable.
-	 * @param {Object} [definition={}] - Object containing various options for the instance. See {@link https://github.com/znetstar/tor-router/wiki/Configuration|the wiki} for more info
-	 * @param {Object} [granax_options] - Object containing options that will be passed to granax
-	 * @param {Logger} [logger] - A winston logger used for logging.
+	 * @param {string} tor_path - Path to the Tor executable.
+	 * @param {InstanceDefinition} [definition] - Object containing various options for the instance. See {@link InstanceDefinition} for more info.
+	 * @param {Object} [granax_options] - Object containing options that will be passed to granax.
+	 * @param {Logger} [logger] - A winston logger. If not provided no logging will occur.
 	 */
 	constructor(tor_path, definition, granax_options, logger) {
 		super();
@@ -41,11 +49,32 @@ class TorProcess extends EventEmitter {
 
 		definition = definition || {};
 		definition.Group = definition.Group ? [].concat(definition.Group) : [];
+		definition.Config = definition.Config || {};
 
 		this._definition = definition;
 
+		/**
+		 * Path to the Tor executable.
+		 * 
+		 * @type {string}
+		 * @public  
+		 */
 		this.tor_path = tor_path;
+ 
+		/**
+		 * Object containing options that will be passed to granax.
+		 * 
+		 * @type {Object}
+		 * @public  
+		 */
 		this.granax_options = granax_options;
+ 
+		/**
+		 * The password that will be set for the control protocol.
+		 * 
+		 * @type {string}
+		 * @public  
+		 */		
 		this.control_password = crypto.randomBytes(128).toString('base64');
 		this._id = nanoid(12);
 
@@ -53,7 +82,7 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * Kills the Tor process
+	 * Kills the Tor process.
 	 * 
 	 * @async
 	 * @returns {Promise}
@@ -71,101 +100,101 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * The unique identifier assigned to each instance
+	 * The unique identifier assigned to each instance.
 	 * 
 	 * @readonly
-	 * @returns {String}
+	 * @type {string}
 	 */
 	get id() { return this._id; }
 
 	/**
-	 * Groups the instance are currently in
+	 * Groups the instance are currently in.
 	 * 
 	 * @readonly
-	 * @returns {String[]}
+	 * @type {string[]}
 	 */
 	get instance_group() {
-		return (this.definition && this.definition.Group) || [];
+		return (this.definition && this.definition.Group);
 	}
 
 	/**
-	 * Either the "Name" property of the definition or the "id" property
+	 * Either the "Name" property of the definition or the {@link TorProcess#id} property.
 	 * 
 	 * @readonly
-	 * @returns {String}
+	 * @type {string}
 	 */
 	get instance_name() {
 		return (this.definition && this.definition.Name) || this.id;
 	}
 
 	/**
-	 * The definition used to create the instance
+	 * The definition used to create the instance.
 	 * 
 	 * @readonly
-	 * @returns {String}
+	 * @type {string}
 	 */
 	get definition() { return this._definition; }
 
 	/**
-	 * The configuration passed to Tor. The same value as "definition.Config"
+	 * The configuration passed to Tor. The same value as `definition.Config`.
 	 * 
 	 * @readonly
-	 * @returns {Object}
+	 * @type {Object}
 	 */
 	get tor_config() { return this.definition.Config; }
 
 	/**
-	 * Port Tor is bound to for DNS traffic
+	 * Port Tor is bound to for DNS traffic.
 	 * 
 	 * @readonly
-	 * @returns {Number}
+	 * @type {number}
 	 */
 	get dns_port() {
 		return this._ports.dns_port;
 	}
 
 	/**
-	 * Port Tor is bound to for SOCKS5 traffic
+	 * Port Tor is bound to for SOCKS5 traffic.
 	 * 
 	 * @readonly
-	 * @returns {Number}
+	 * @type {number}
 	 */
 	get socks_port() {
 		return this._ports.socks_port;
 	}
 
 	/**
-	 * Port Tor is bound to for API access 
+	 * Port Tor is bound to for API access.
 	 * 
 	 * @readonly
-	 * @returns {Number}
+	 * @type {number}
 	 */
 	get control_port() {
 		return this._ports.control_port;
 	}
 
 	/**
-	 * Instance of granax connected to the Tor process
+	 * Instance of granax.TorController connected to the Tor process.
 	 * 
 	 * @readonly
-	 * @returns {Object}
+	 * @type {TorController}
 	 */
 	get controller() {
 		return this._controller;
 	}
 
 	/**
-	 * Property identifiyng whether Tor has started 
+	 * Property identifiyng whether Tor has started.
 	 * 
 	 * @readonly
-	 * @returns {Boolean}
+	 * @type {boolean}
 	 */
 	get ready() { return this._ready; }
 
 	/* Passthrough to granax */
 
 	/**
-	 * Requests a new identity via the control interface
+	 * Requests a new identity via the control protocol.
 	 * 
 	 * @async
 	 */
@@ -176,12 +205,13 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * Retrieves a configuration value from the instance via the control interface
+	 * Retrieves a configuration value from the instance via the control protocol.
 	 * 
 	 * @async
-	 * @param {String} keyword - The name of the configuration property to retrieve
+	 * @throws Will throw an error if not connected to the control protocol.
+	 * @param {string} keyword - The name of the configuration property to retrieve.
 	 * 
-	 * @returns {Promise<String[]>}
+	 * @returns {Promise<string[]>}
 	 */
 	async get_config(keyword) {
 		if (!this.controller)
@@ -191,11 +221,12 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * Sets a configuration value for the instance via the control interface
+	 * Sets a configuration value for the instance via the control protocol.
 	 * 
 	 * @async
-	 * @param {String} keyword - The name of the configuration property to retrieve
-	 * @param value - Value to set the property to
+	 * @throws Will throw an error if not connected to the control protocol.
+	 * @param {string} keyword - The name of the configuration property to retrieve.
+	 * @param {*} value - Value to set the property to.
 	 * 
 	 * @returns {Promise}
 	 */
@@ -208,10 +239,11 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * Sends a signal via the control tnterface
+	 * Sends a signal via the control tnterface.
 	 * 
 	 * @async
-	 * @param {String} signal - The signal to send
+	 * @throws Will throw an error if not connected to the control protocol.
+	 * @param {string} signal - The signal to send.
 	 * 
 	 * @returns {Promise}
 	 */
@@ -224,11 +256,11 @@ class TorProcess extends EventEmitter {
 	}
 
 	/**
-	 * Creates the Tor process based on the configuration provided. Promise is resolved when the process has been started
+	 * Creates the Tor process based on the configuration provided. Promise is resolved when the process has been started.
 	 * 
 	 * @async
 	 * 
-	 * @returns {Promise<ChildProcess>} - The process that has been created
+	 * @returns {Promise<ChildProcess>} - The process that has been created.
 	 */
 	async create() {
 		this._ports = {};
@@ -262,11 +294,11 @@ class TorProcess extends EventEmitter {
 			}
 			
 			/**
-			 * An event that fires when the process has closed
+			 * An event that fires when the process has closed.
 			 * 
 			 * @event TorProcess#process_exit
-			 * @type {Number}
-			 * @returns {Number} - The exit code from the process
+			 * @type {number}
+			 * @param {number} code - The exit code from the process.
 			 */
 			this.emit('process_exit', code);
 		}));
@@ -297,7 +329,7 @@ class TorProcess extends EventEmitter {
 						this.logger.debug(`[tor-${this.instance_name}]: authenticated with tor instance via the control port`);
 						this.control_port_connected = true;
 						/**
-						 * An event that fires when a connection has been established to the control interface
+						 * An event that fires when a connection has been established to the control protocol.
 						 * 
 						 * @event TorProcess#controller_ready
 						 */
@@ -313,7 +345,7 @@ class TorProcess extends EventEmitter {
 			if (text.indexOf('Bootstrapped 100%: Done') !== -1){
 				this.bootstrapped = true;
 				/**
-				 * An event that fires when the Tor process is fully bootstrapped (and ready for traffic)
+				 * An event that fires when the Tor process is fully bootstrapped (and ready for traffic).
 				 * 
 				 * @event TorProcess#ready
 				 */
@@ -323,7 +355,7 @@ class TorProcess extends EventEmitter {
 			if (text.indexOf('Opening Control listener on') !== -1) {
 				this.control_port_listening = true;
 				/**
-				 * An event that fires when the Tor process has started listening for control interface traffic
+				 * An event that fires when the Tor process has started listening for control interface traffic.
 				 * 
 				 * @event TorProcess#control_listen
 				 */
@@ -333,7 +365,7 @@ class TorProcess extends EventEmitter {
 			if (text.indexOf('Opening Socks listener on') !== -1) {
 				this.socks_port_listening = true;
 				/**
-				 * An event that fires when the Tor process has started listening for SOCKS5 traffic
+				 * An event that fires when the Tor process has started listening for SOCKS5 traffic.
 				 * 
 				 * @event TorProcess#socks_listen
 				 */
@@ -342,7 +374,7 @@ class TorProcess extends EventEmitter {
 
 			if (text.indexOf('Opening DNS listener on') !== -1) {
 				/**
-				 * An event that fires when the Tor process has started listening for DNS traffic
+				 * An event that fires when the Tor process has started listening for DNS traffic.
 				 * 
 				 * @event TorProcess#dns_listen
 				 */
@@ -352,7 +384,7 @@ class TorProcess extends EventEmitter {
 
 			if (text.indexOf('[err]') !== -1) {
 				/**
-				 * An event that fires the Tor process has written an error to stdout or stderr or an error occured connecting to the control interface
+				 * An event that fires the Tor process has written an error to stdout or stderr or an error occured connecting to the control protocol.
 				 * 
 				 * @event TorProcess#error
 				 * @type {Error}

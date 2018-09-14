@@ -23,20 +23,19 @@ module.exports = {
 	  /* Taken from https://github.com/bookchin/granax/blob/master/index.js */
 	  switch (platform) {
 	    case 'win32':
-	      torpath = path.join(BIN_PATH, 'Browser', 'TorBrowser', 'Tor', 'tor.exe');
+	      return path.join(BIN_PATH, 'Browser', 'TorBrowser', 'Tor', 'tor.exe');
 	      break;
 	    case 'darwin':
-	      torpath = path.join(BIN_PATH, '.tbb.app', 'Contents', 'Resources',
+	      return path.join(BIN_PATH, '.tbb.app', 'Contents', 'Resources',
 	                          'TorBrowser', 'Tor', 'tor');
 	      break;
 	    case 'android':
 	    case 'linux':
-	      torpath = path.join(BIN_PATH, 'tor-browser_en-US', 'Browser', 'TorBrowser', 'Tor', 'tor');
+	      return path.join(BIN_PATH, 'tor-browser_en-US', 'Browser', 'TorBrowser', 'Tor', 'tor');
 	      break;
 	    default:
-	      throw new Error(`Unsupported platform "${platform}"`);
+	      return "tor"; 
 	  }
-	  return torpath;
 	})(),
 	"instances": null,
 	"dns": {

@@ -12,7 +12,7 @@ const package_json = JSON.parse(fs.readFileSync(`${__dirname}/../package.json`, 
 
 function extractHost (host) {
     if (typeof(host) === 'number')
-        return { hostname: (typeof(default_ports.default_host) === 'string' ? default_ports.default_host : ''), port: host };
+        return { hostname: (typeof(default_ports.default_host) === 'string' ? default_ports.default_host : '0.0.0.0'), port: host };
     else if (typeof(host) === 'string' && host.indexOf(':') !== -1)
         return { hostname: host.split(':').shift(), port: Number(host.split(':').pop()) };
     else
@@ -36,7 +36,7 @@ async function main(nconf, logger) {
 
     if (typeof(control_host) === 'boolean') {
         control_host = extractHost(9077);
-        nconf.set('controlHost', assembleHost(control_port));
+        nconf.set('controlHost', assembleHost(control_host));
     }
 
     if (typeof(control_host_ws) === 'boolean') {

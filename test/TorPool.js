@@ -96,6 +96,18 @@ describe('TorPool', function () {
 		let torPool;
 		before('create tor pool', () => { torPool = torPoolFactory(); })
 
+		it('should throw if the "instance_defintions" field is falsy', async function () {
+			let fn = () => {};
+			try {
+				await torPool.add();
+			} catch (error) {
+				fn = () => { throw error };
+			}
+			finally {
+				assert.throws(fn);
+			}
+		});
+
 		it('should create instances from several instance definitions', async function () {
 			this.timeout(WAIT_FOR_CREATE*2);
 			await torPool.add(_.cloneDeep(instance_defintions))
@@ -128,13 +140,25 @@ describe('TorPool', function () {
 		});
 	});
 
-	describe('#create(number_of_instances)', function () {
+	describe('#create(instances)', function () {
 		let torPool;
 
 		before('create tor pool', () => { 
 			torPool = torPoolFactory(); 
 			torPool.default_tor_config = { TestSocks: 1 };
-		})
+		});
+
+		it('should throw if the "number_of_instances" field is falsy', async function () {
+			let fn = () => {};
+			try {
+				await torPool.create();
+			} catch (error) {
+				fn = () => { throw error; }
+			}
+			finally {
+				assert.throws(fn);
+			}
+		});
 
 		it('should create 2 instances with the default config', async function () {
 			this.timeout(WAIT_FOR_CREATE*2);
@@ -167,6 +191,12 @@ describe('TorPool', function () {
 			tor_pool = torPoolFactory(); 
 			this.timeout(WAIT_FOR_CREATE);
 			instances = (await tor_pool.add([ { Name: 'instance-1', Group: [ "bar", "foo" ] }, { Name: 'instance-2', Group: ["foo", "bar"] } ]));
+		});
+
+		it('should throw if the provided group does not exist', function () {
+			assert.throws(() => {
+				tor_pool.instances_by_group('baz');
+			});
 		});
 
 		it('should return both instances', function () {
