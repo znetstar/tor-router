@@ -21,28 +21,7 @@ module.exports = {
 		"Log": "notice stdout",
 		"NewCircuitPeriod": "10"
 	},
-	"torPath": (() => {
-	  let platform = require('os').platform();
-	  let BIN_PATH = path.join(__dirname, '..', 'node_modules', 'granax', 'bin');
-		/**
-		 * @author gordonhall on GitLab <https://bit.ly/2xcahjY>
-		 */
-	  switch (platform) {
-	    case 'win32':
-	      return path.join(BIN_PATH, 'Browser', 'TorBrowser', 'Tor', 'tor.exe');
-	      break;
-	    case 'darwin':
-	      return path.join(BIN_PATH, '.tbb.app', 'Contents', 'Resources',
-	                          'TorBrowser', 'Tor', 'tor');
-	      break;
-	    case 'android':
-	    case 'linux':
-	      return path.join(BIN_PATH, 'tor-browser_en-US', 'Browser', 'TorBrowser', 'Tor', 'tor');
-	      break;
-	    default:
-	      return "tor"; 
-	  }
-	})(),
+	"torPath": require('granax').tor(require('os').platform()),
 	"instances": null,
 	"dns": {
 		"timeout": 10000,

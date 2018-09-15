@@ -1,5 +1,10 @@
 # Changelog
 
+## [4.0.3] - 2018-09-15
+
+### Changed
+- References granax in `default_config.js` to comply with licensing requirements.
+
 ## [4.0.2] - 2018-09-15
 
 ### Added
