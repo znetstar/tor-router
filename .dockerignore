@@ -4,7 +4,6 @@ Dockerfile
 npm-debug.log
 docker-compose.yml
 .env
-README.md
 .vscode
 .DS_Store
 docs
