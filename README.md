@@ -1,6 +1,7 @@
 # Tor Router
 
 [![NPM](https://nodei.co/npm/tor-router.png)](https://nodei.co/npm/tor-router/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router?ref=badge_shield)
 
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router?ref=badge_shield)
 
@@ -56,3 +57,7 @@ To generate API documentation run `npm run docs`. The documentation will be avai
 ## Testing
 
 Tests are written in mocha and can be found under `test/` and can be run with `npm test`
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router?ref=badge_large)
