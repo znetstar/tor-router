@@ -41,6 +41,7 @@ describe('TorPool', function () {
 	});
 
 	describe('#create_instance(instance_defintion)', function () {
+		
 		let instance_defintion = {
 			Name: 'instance-1',
 			Config: {
@@ -70,6 +71,7 @@ describe('TorPool', function () {
 		});
 
 		it('should not be able to create an instance with an existing name', async function () {
+			this.timeout(WAIT_FOR_CREATE * 2);
 			let fn = () => {}
 
 			try {

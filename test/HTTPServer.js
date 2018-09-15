@@ -6,13 +6,14 @@ const _ = require('lodash');
 const Promise = require('bluebird');
 
 const { TorPool, HTTPServer, TorProcess } = require('../');
-const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS  } = require('./constants');
+const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS, SHUTDOWN_DELAY, SHUTDOWN_TIMEOUT } = require('./constants');
 
 const request = require('requestretry').defaults({
 	promiseFactory: ((resolver) => new Promise(resolver)),
 	maxAttempts: MAX_ATTEMPTS,
 	retryStrategy: RETRY_STRATEGY,
-	retryDelay: RETRY_DELAY
+	retryDelay: RETRY_DELAY,
+	timeout: PAGE_LOAD_TIME
 });
 
 nconf.use('memory');
@@ -69,17 +70,16 @@ describe('HTTPServer', function () {
 			})
 		});
 
-
-		after('shutdown server', function () {
-			httpServer.close();
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				httpServer.close();
+				await httpServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
-	
-		after('shutdown tor pool', async function () {
-			await httpServerTorPool.exit();
-		});
-
 	});
-	return
+
 	describe('#handle_connect_connections(req, inbound_socket, head)', function () {
 		let httpServerTorPool;
 		let httpServer;
@@ -128,12 +128,13 @@ describe('HTTPServer', function () {
 			});
 		});
 
-		after('shutdown server', function () {
-			httpServer.close();
-		});
-	
-		after('shutdown tor pool', async function () {
-			await httpServerTorPool.exit();
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				httpServer.close();
+				await httpServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
 	});
 
@@ -163,29 +164,27 @@ describe('HTTPServer', function () {
 		it(`should service a request for example.com through the instance named ${instance_def.Name}`, function (done) {
 			this.timeout(PAGE_LOAD_TIME);
 
-			let req;
-
 			let connectionHandler = (instance, source) => {
 				assert.equal(instance.instance_name, instance_def.Name);
 				assert.isTrue(source.by_name);
 				
-				req.cancel();
 				httpServer.removeAllListeners('instance_connection');;
 				done();
 			};
 
 			httpServer.on('instance_connection', connectionHandler);
 
-			req = request({
+			request({
 				url: 'http://example.com',
-				proxy: `http://${instance_def.Name}:@127.0.0.1:${httpPort}`
+				proxy: `http://${instance_def.Name}:@127.0.0.1:${httpPort}`,
+				timeout: PAGE_LOAD_TIME
 			})
 			.catch(done)
 		});
 		
 		it(`four requests made to example.com through the group named "foo" should come from the instances in "foo"`, function (done) {
 			(async () => {
-				this.timeout(PAGE_LOAD_TIME + (WAIT_FOR_CREATE));
+				this.timeout((PAGE_LOAD_TIME * 4) + (WAIT_FOR_CREATE));
 
 				await httpServerTorPool.add([
 					{
@@ -266,12 +265,13 @@ describe('HTTPServer', function () {
 			}
 		});
 
-		after('shutdown server', function () {
-			httpServer.close();
-		});
-	
-		after('shutdown tor pool', async function () {
-			await httpServerTorPool.exit();
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				httpServer.close();
+				await httpServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
 	});
 	
@@ -314,14 +314,14 @@ describe('HTTPServer', function () {
 
 			req = request({
 				url: 'https://example.com',
-				proxy: `http://${instance_def.Name}:@127.0.0.1:${httpPort}`,
+				proxy: `http://${instance_def.Name}:@127.0.0.1:${httpPort}`
 			})
 			.catch(done);
 		});
 
 		it(`four requests made to example.com through the group named "foo" should come from instances in the "foo" group`, function (done) {
 			(async () => {
-				this.timeout(PAGE_LOAD_TIME + (WAIT_FOR_CREATE));
+				this.timeout((PAGE_LOAD_TIME * 4) + (WAIT_FOR_CREATE));
 
 				await httpServerTorPool.add([
 					{
@@ -333,8 +333,6 @@ describe('HTTPServer', function () {
 				httpServer.proxy_by_name.mode = "group";
 			})()
 			.then(async () => {
-				let request = require('request-promise').defaults({ proxy: `http://foo:@127.0.0.1:${httpPort}` });
-
 				let names_requested = [];
 
 				let connectionHandler = (instance, source) => {
@@ -356,7 +354,8 @@ describe('HTTPServer', function () {
 				let i = 0;
 				while (i < httpServerTorPool.instances.length) {
 					await request({
-						url: 'https://example.com'
+						url: 'https://example.com',
+						proxy: `http://foo:@127.0.0.1:${httpPort}`
 					});
 					i++;
 				}
@@ -368,10 +367,12 @@ describe('HTTPServer', function () {
 			.catch(done);
 		});
 
+		const regular_request = require('request-promise');
+
 		it(`shouldn't be able to send a request without a username`, async function() {
 			let f = () => {};
 			try {
-				await request({
+				await regular_request({
 					url: 'https://example.com',
 					proxy: `http://127.0.0.1:${httpPort}`,
 					timeout: PAGE_LOAD_TIME
@@ -386,10 +387,11 @@ describe('HTTPServer', function () {
 		it(`shouldn't be able to send a request with an incorrect username`, async function() {
 			let f = () => {};
 			try {
-				await request({
+				await regular_request({
 					url: 'https://example.com',
 					proxy: `http://blah-blah-blah:@127.0.0.1:${httpPort}`,
-					timeout: PAGE_LOAD_TIME
+					timeout: PAGE_LOAD_TIME,
+					retryStrategy: request.RetryStrategies.NetworkError
 				});
 			} catch (error) {
 				f = () => { throw error };
@@ -398,12 +400,13 @@ describe('HTTPServer', function () {
 			}
 		});
 
-		after('shutdown server', function () {
-			httpServer.close();
-		});
-	
-		after('shutdown tor pool', async function () {
-			await httpServerTorPool.exit();
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				httpServer.close();
+				await httpServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
 	});
 });

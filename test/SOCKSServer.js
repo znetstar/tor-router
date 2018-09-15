@@ -3,17 +3,18 @@ const nconf = new Provider();
 const getPort = require('get-port');
 const { HttpAgent, auth } = require('socksv5');
 const { assert } = require('chai');
-const SocksProxyAgent = require('socks-proxy-agent');
 const _ = require('lodash');
+const SocksProxyAgent = require('socks-proxy-agent');
 
 const { TorPool, SOCKSServer, TorProcess } = require('../');
-const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS } = require('./constants');
+const { WAIT_FOR_CREATE, PAGE_LOAD_TIME, RETRY_DELAY, RETRY_STRATEGY, MAX_ATTEMPTS, SHUTDOWN_DELAY, SHUTDOWN_TIMEOUT } = require('./constants');
 
 const request = require('requestretry').defaults({
 	promiseFactory: ((resolver) => new Promise(resolver)),
 	maxAttempts: MAX_ATTEMPTS,
 	retryStrategy: RETRY_STRATEGY,
-	retryDelay: RETRY_DELAY
+	retryDelay: RETRY_DELAY,
+	timeout: PAGE_LOAD_TIME
 });
 
 nconf.use('memory');
@@ -43,7 +44,12 @@ describe('SOCKSServer', function () {
 
 			await request({
 				url: 'http://example.com',
-				agent: new SocksProxyAgent(`socks5h://127.0.0.1:${socksPort}`)
+				agent: new HttpAgent({
+					proxyHost: '127.0.0.1',
+					proxyPort: socksPort,
+					localDNS: false,
+					auths: [ auth.None() ]
+				})
 			});
 		});
 
@@ -62,17 +68,26 @@ describe('SOCKSServer', function () {
 
 			request({
 				url: 'http://example.com',
-				agent: new SocksProxyAgent(`socks5h://127.0.0.1:${socksPort}`)
+				agent: new HttpAgent({
+					proxyHost: '127.0.0.1',
+					proxyPort: socksPort,
+					localDNS: false,
+					auths: [ auth.None() ]
+				})
 			})
 			.catch(done)
 		});
 
-		after('shutdown server and shutdown tor pool', async function () {
-			socksServer.close();
-			await socksServerTorPool.exit();
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				socksServer.close();
+				await socksServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
 	});
-
+	
 	describe('#authenticate_user(username, password)', function () {
 		let socksPort;
 		let socksServerTorPool;
@@ -107,18 +122,22 @@ describe('SOCKSServer', function () {
 			};
 
 			socksServer.on('instance_connection', connectionHandler);
+
 			request({
 				url: 'http://example.com',
-				agent: new SocksProxyAgent(`socks5h://${instance_def.Name}:doesnotmatter@127.0.0.1:${socksPort}`)
+				agent: new HttpAgent({
+					proxyHost: '127.0.0.1',
+					proxyPort: socksPort,
+					localDNS: false,
+					auths: [ auth.UserPassword(instance_def.Name, "doesn't mater") ]
+				})
 			})
 			.catch(done);
 		});
 
-		return
-
 		it(`four requests made to example.com through the group named "foo" should come from the instances in "foo"`, function (done) {
 			(async () => {
-				this.timeout(PAGE_LOAD_TIME + (WAIT_FOR_CREATE));
+				this.timeout((PAGE_LOAD_TIME * 4) + (WAIT_FOR_CREATE));
 
 				await socksServerTorPool.add([
 					{
@@ -153,7 +172,12 @@ describe('SOCKSServer', function () {
 				while (i < socksServerTorPool.instances.length) {
 					await request({
 						url: 'http://example.com',
-						agent: new SocksProxyAgent(`socks5h://foo:doesnotmatter@127.0.0.1:${socksPort}`)
+						agent: new HttpAgent({
+							proxyHost: '127.0.0.1',
+							proxyPort: socksPort,
+							localDNS: false,
+							auths: [ auth.UserPassword('foo', "doesn't mater") ]
+						})
 					});
 					i++;
 				}
@@ -165,49 +189,45 @@ describe('SOCKSServer', function () {
 			.catch(done);
 		});
 
-		// it(`shouldn't be able to send a request without a username`, async function() {
-		// 	let f = () => {};
-		// 	try {
-		// 		await request({
-		// 			url: 'http://example.com',
-		// 			agent: new HttpAgent({
-		// 				proxyHost: '127.0.0.1',
-		// 				proxyPort: socksPort,
-		// 				localDNS: false,
-		// 				auths: [ auth.None() ]
-		// 			}),
-		// 			timeout: PAGE_LOAD_TIME
-		// 		});
-		// 	} catch (error) {
-		// 		f = () => { throw error };
-		// 	} finally {
-		// 		assert.throws(f);
-		// 	}
-		// });
+		const regular_request = require('request-promise');
 
-		// it(`shouldn't be able to send a request with an incorrect username`, async function() {
-		// 	let f = () => {};
-		// 	try {
-		// 		await request({
-		// 			url: 'http://example.com',
-		// 			agent: new HttpAgent({
-		// 				proxyHost: '127.0.0.1',
-		// 				proxyPort: socksPort,
-		// 				localDNS: false,
-		// 				auths: [ auth.UserPassword("foo", "bar") ]
-		// 			}),
-		// 			timeout: PAGE_LOAD_TIME
-		// 		});
-		// 	} catch (error) {
-		// 		f = () => { throw error };
-		// 	} finally {
-		// 		assert.throws(f);
-		// 	}
-		// });
+		it(`shouldn't be able to send a request without a username`, async function() {
+			let f = () => {};
+			try {
+				await regular_request({
+					url: 'http://example.com',
+					agent: new SocksProxyAgent(`socks5h://127.0.0.1:${socksPort}`),
+					timeout: PAGE_LOAD_TIME
+				});
+			} catch (error) {
+				f = () => { throw error };
+			} finally {
+				assert.throws(f);
+			}
+		});
 
-		after('shutdown server and shutdown tor pool', async function () {
-			socksServer.close();
-			await socksServerTorPool.exit();
+		it(`shouldn't be able to send a request with an incorrect username`, async function() {
+			let f = () => {};
+			try {
+				await regular_request({
+					url: 'http://example.com',
+					agent: new SocksProxyAgent(`socks5h://blah-blah-blah:@127.0.0.1:${socksPort}`),
+					timeout: PAGE_LOAD_TIME
+				});
+			} catch (error) {
+				f = () => { throw error };
+			} finally {
+				assert.throws(f);
+			}
+		});
+
+		after('shutdown server and shutdown tor pool', function (done) {
+			this.timeout(SHUTDOWN_TIMEOUT);
+			setTimeout(async () => {
+				socksServer.close();
+				await socksServerTorPool.exit();
+				done();
+			}, SHUTDOWN_DELAY);
 		});
 	});
 	

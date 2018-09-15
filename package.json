@@ -21,7 +21,7 @@
     "grunt": "^1.0.3",
     "grunt-jsdoc": "^2.3.0",
     "mocha": "^5.2.0",
-    "request": "^2.79.0",
+    "request": "^2.87.0",
     "request-promise": "^4.2.2",
     "requestretry": "^2.0.2",
     "socks-proxy-agent": "^4.0.1"

@@ -637,7 +637,7 @@ class TorPool extends EventEmitter {
 	 * @async
 	 * @param {string} name - Name of the instance.
 	 * @param {string} keyword - Name of the configuration property.
-	 * @param {*} value - Value to set the configuration property to.
+	 * @param {any} value - Value to set the configuration property to.
 	 * 
 	 * @returns {Promise}
 	 * @throws When no instance matched the provided name.
@@ -674,7 +674,7 @@ class TorPool extends EventEmitter {
 	 * @async
 	 * @param {number} index - Index of the instance in the pool.
 	 * @param {string} keyword - Name of the configuration property.
-	 * @param {*} value - Value to set the configuration property to.
+	 * @param {any} value - Value to set the configuration property to.
 	 * 
 	 * @returns {Promise}
 	 * @throws When no instance exists at the provided index.
@@ -692,7 +692,7 @@ class TorPool extends EventEmitter {
 	 * @async
 	 * @param {string} group - Name of the group.
 	 * @param {string} keyword - Name of the configuration property.
-	 * @param {*} value - Value to set the configuration property to.
+	 * @param {any} value - Value to set the configuration property to.
 	 * 
 	 * @returns {Promise}
 	 * @throws When the provided group does not exist.
@@ -706,7 +706,7 @@ class TorPool extends EventEmitter {
 	 * 
 	 * @async
 	 * @param {string} keyword - Name of the configuration property.
-	 * @param {*} value - Value to set the configuration property to.
+	 * @param {any} value - Value to set the configuration property to.
 	 * 
 	 * @returns {Promise}
 	 */

@@ -75,35 +75,40 @@ describe('TorProcess', function () {
 		});
 
 		it('should create the child process', async function () {
-			this.timeout(WAIT_FOR_CREATE);
+			this.timeout(5000);
 			await tor.create();
 		});
 
 		it('should signal when it is listening on the control port', function (done) {
+			this.timeout(5000);
 			if (tor.control_port_listening)
 				return done();
 			tor.once('control_listen', done);
 		});
 
 		it('should signal when connected to the control port', function (done) {
+			this.timeout(5000);
 			if (tor.control_port_connected)
 				return done();
 			tor.once('controller_ready', done);
 		});
 
 		it('should signal when it is listening on the socks port', function (done) {
+			this.timeout(5000);
 			if (tor.socks_port_listening)
 				return done();
 			tor.once('socks_listen', done);
 		});
 
 		it('should signal when it is listening on the dns port', function (done) {
+			this.timeout(5000);
 			if (tor.dns_port_listening)
 				return done();
 			tor.once('dns_listen', done);
 		});
 
 		it('should signal when bootstrapped', function (done) {
+			this.timeout(WAIT_FOR_CREATE);
 			tor.once('error', done);
 			if (tor.bootstrapped)
 				return done();
@@ -111,6 +116,7 @@ describe('TorProcess', function () {
 		});
 
 		after('exit tor', async function () {
+			this.timeout(5000);
 			await tor.exit();
 		});
 	});

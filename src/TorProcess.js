@@ -226,7 +226,7 @@ class TorProcess extends EventEmitter {
 	 * @async
 	 * @throws Will throw an error if not connected to the control protocol.
 	 * @param {string} keyword - The name of the configuration property to retrieve.
-	 * @param {*} value - Value to set the property to.
+	 * @param {any} value - Value to set the property to.
 	 * 
 	 * @returns {Promise}
 	 */
