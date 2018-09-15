@@ -1,6 +1,7 @@
 # Tor Router
 
 [![NPM](https://nodei.co/npm/tor-router.png)](https://nodei.co/npm/tor-router/)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router?ref=badge_shield)
 
 *Tor Router* is a SOCKS5, DNS and HTTP proxy server for distributing traffic across multiple instances of Tor. At startup Tor Router will run an arbitrary number of instances Tor and each request will be sent to a different instance in round-robin fashion. This can be used to increase anonymity, because each request will be sent on a different circuit and will most likely use a different exit-node, and also to increase performance since outbound traffic is now split across several instances of Tor.
 
@@ -54,3 +55,7 @@ To generate API documentation run `npm run docs`. The documentation will be avai
 ## Testing
 
 Tests are written in mocha and can be found under `test/` and can be run with `npm test`
+
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fznetstar%2Ftor-router?ref=badge_large)
