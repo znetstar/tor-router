@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>SOCKSServer - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav>
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="ControlServer.html">ControlServer</a><ul class='methods'><li data-type='method'><a href="ControlServer.html#.instance_info">instance_info</a></li><li data-type='method'><a href="ControlServer.html#close">close</a></li><li data-type='method'><a href="ControlServer.html#createDNSServer">createDNSServer</a></li><li data-type='method'><a href="ControlServer.html#createHTTPServer">createHTTPServer</a></li><li data-type='method'><a href="ControlServer.html#createSOCKSServer">createSOCKSServer</a></li><li data-type='method'><a href="ControlServer.html#createTorPool">createTorPool</a></li><li data-type='method'><a href="ControlServer.html#listen">listen</a></li><li data-type='method'><a href="ControlServer.html#listenTcp">listenTcp</a></li><li data-type='method'><a href="ControlServer.html#listenWs">listenWs</a></li></ul></li><li><a href="DNSServer.html">DNSServer</a><ul class='methods'><li data-type='method'><a href="DNSServer.html#listen">listen</a></li></ul></li><li><a href="HTTPServer.html">HTTPServer</a><ul class='methods'><li data-type='method'><a href="HTTPServer.html#listen">listen</a></li></ul></li><li><a href="SOCKSServer.html">SOCKSServer</a><ul class='methods'><li data-type='method'><a href="SOCKSServer.html#listen">listen</a></li></ul></li><li><a href="TorPool.html">TorPool</a><ul class='methods'><li data-type='method'><a href="TorPool.html#add">add</a></li><li data-type='method'><a href="TorPool.html#add_instance_to_group">add_instance_to_group</a></li><li data-type='method'><a href="TorPool.html#add_instance_to_group_at">add_instance_to_group_at</a></li><li data-type='method'><a href="TorPool.html#add_instance_to_group_by_name">add_instance_to_group_by_name</a></li><li data-type='method'><a href="TorPool.html#create">create</a></li><li data-type='method'><a href="TorPool.html#create_instance">create_instance</a></li><li data-type='method'><a href="TorPool.html#exit">exit</a></li><li data-type='method'><a href="TorPool.html#get_config_at">get_config_at</a></li><li data-type='method'><a href="TorPool.html#get_config_by_name">get_config_by_name</a></li><li data-type='method'><a href="TorPool.html#instance_at">instance_at</a></li><li data-type='method'><a href="TorPool.html#instance_by_name">instance_by_name</a></li><li data-type='method'><a href="TorPool.html#instances_by_group">instances_by_group</a></li><li data-type='method'><a href="TorPool.html#new_identites">new_identites</a></li><li data-type='method'><a href="TorPool.html#new_identites_by_group">new_identites_by_group</a></li><li data-type='method'><a href="TorPool.html#new_identity_at">new_identity_at</a></li><li data-type='method'><a href="TorPool.html#new_identity_by_name">new_identity_by_name</a></li><li data-type='method'><a href="TorPool.html#next">next</a></li><li data-type='method'><a href="TorPool.html#next_by_group">next_by_group</a></li><li data-type='method'><a href="TorPool.html#remove">remove</a></li><li data-type='method'><a href="TorPool.html#remove_at">remove_at</a></li><li data-type='method'><a href="TorPool.html#remove_by_name">remove_by_name</a></li><li data-type='method'><a href="TorPool.html#remove_instance_from_group">remove_instance_from_group</a></li><li data-type='method'><a href="TorPool.html#remove_instance_from_group_at">remove_instance_from_group_at</a></li><li data-type='method'><a href="TorPool.html#remove_instance_from_group_by_name">remove_instance_from_group_by_name</a></li><li data-type='method'><a href="TorPool.html#set_config_all">set_config_all</a></li><li data-type='method'><a href="TorPool.html#set_config_at">set_config_at</a></li><li data-type='method'><a href="TorPool.html#set_config_by_group">set_config_by_group</a></li><li data-type='method'><a href="TorPool.html#set_config_by_name">set_config_by_name</a></li><li data-type='method'><a href="TorPool.html#signal_all">signal_all</a></li><li data-type='method'><a href="TorPool.html#signal_at">signal_at</a></li><li data-type='method'><a href="TorPool.html#signal_by_group">signal_by_group</a></li><li data-type='method'><a href="TorPool.html#signal_by_name">signal_by_name</a></li></ul></li><li><a href="TorProcess.html">TorProcess</a><ul class='methods'><li data-type='method'><a href="TorProcess.html#create">create</a></li><li data-type='method'><a href="TorProcess.html#exit">exit</a></li><li data-type='method'><a href="TorProcess.html#get_config">get_config</a></li><li data-type='method'><a href="TorProcess.html#new_identity">new_identity</a></li><li data-type='method'><a href="TorProcess.html#set_config">set_config</a></li><li data-type='method'><a href="TorProcess.html#signal">signal</a></li></ul></li></ul><h3>Modules</h3><ul><li><a href="module-tor-router.html">tor-router</a></li><li><a href="module-tor-router_ControlServer.html">tor-router/ControlServer</a></li><li><a href="module-tor-router_default_config.html">tor-router/default_config</a></li><li><a href="module-tor-router_default_ports.html">tor-router/default_ports</a></li><li><a href="module-tor-router_DNSServer.html">tor-router/DNSServer</a></li><li><a href="module-tor-router_HTTPServer.html">tor-router/HTTPServer</a></li><li><a href="module-tor-router_launch.html">tor-router/launch</a></li><li><a href="module-tor-router_nconf_load_env.html">tor-router/nconf_load_env</a></li><li><a href="module-tor-router_SOCKSServer.html">tor-router/SOCKSServer</a></li><li><a href="module-tor-router_TorPool.html">tor-router/TorPool</a></li><li><a href="module-tor-router_TorProcess.html">tor-router/TorProcess</a></li><li><a href="module-tor-router_winston_silent_logger.html">tor-router/winston_silent_logger</a></li></ul><h3>Events</h3><ul><li><a href="DNSServer.html#event:instance-connection">instance-connection</a></li><li><a href="HTTPServer.html#event:instance-connection">instance-connection</a></li><li><a href="SOCKSServer.html#event:instance-connection">instance-connection</a></li><li><a href="TorPool.html#event:instance_created">instance_created</a></li><li><a href="TorProcess.html#event:control_listen">control_listen</a></li><li><a href="TorProcess.html#event:controller_ready">controller_ready</a></li><li><a href="TorProcess.html#event:dns_listen">dns_listen</a></li><li><a href="TorProcess.html#event:error">error</a></li><li><a href="TorProcess.html#event:process_exit">process_exit</a></li><li><a href="TorProcess.html#event:ready">ready</a></li><li><a href="TorProcess.html#event:socks_listen">socks_listen</a></li></ul><h3>Global</h3><ul><li><a href="global.html#assembleHost">assembleHost</a></li><li><a href="global.html#cleanUp">cleanUp</a></li><li><a href="global.html#env_whitelist">env_whitelist</a></li><li><a href="global.html#logger">logger</a></li><li><a href="global.html#main">main</a></li><li><a href="global.html#nconf">nconf</a></li><li><a href="global.html#REALM">REALM</a></li><li><a href="global.html#setup_nconf_env">setup_nconf_env</a></li><li><a href="global.html#TOR_ROUTER_PROXY_AGENT">TOR_ROUTER_PROXY_AGENT</a></li></ul>
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">SOCKSServer</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        SOCKSServer
+        </h2>
+        
+            <div class="class-description">A SOCKS5 proxy server that will route requests to instances in the TorPool provided.</div>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+    <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="SOCKSServer"><span class="type-signature"></span>new SOCKSServer<span class="signature">(tor_pool, logger<span class="signature-attributes">opt</span>, proxy_by_name<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line26">line 26</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Creates an instance of `SOCKSServer`.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>tor_pool</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="TorPool.html">TorPool</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">The pool of instances that will be used for requests</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>logger</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Logger</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Winston logger that will be used for logging. If not specified will disable logging.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>proxy_by_name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#ProxyByNameConfig">ProxyByNameConfig</a></span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">Enable routing to specific instances or groups of instances using the username field (socks://instance-1:@my-server:9050) when connecting.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        </div>
+    
+
+    
+        <h3 class="subsection-title">Extends</h3>
+
+        
+
+
+    <ul>
+        <li>Server</li>
+    </ul>
+
+
+    
+
+    
+
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="logger"><span class="type-signature"></span>logger<span class="type-signature"> :Logger</span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line219">line 219</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Winston logger to use.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Logger</span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="proxy_by_name"><span class="type-signature"></span>proxy_by_name<span class="type-signature"> :<a href="global.html#ProxyByNameConfig">ProxyByNameConfig</a></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line233">line 233</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Configuration for the "proxy by name" feature.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="global.html#ProxyByNameConfig">ProxyByNameConfig</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="tor_pool"><span class="type-signature"></span>tor_pool<span class="type-signature"> :<a href="TorPool.html">TorPool</a></span></h4>
+
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line226">line 226</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Pool of instances use to service requests.
+</div>
+
+
+
+    <h5>Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type"><a href="TorPool.html">TorPool</a></span>
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="listen"><span class="type-signature">(async) </span>listen<span class="signature">(port, host<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Promise}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line43">line 43</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Binds the server to a port and IP Address.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>port</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last">The port to bind to.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>host</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>"::"</code>
+                
+                </td>
+            
+
+            <td class="description last">Address to bind to. Will default to :: or 0.0.0.0 if not specified.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Promise</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+
+    
+
+    <h4 class="name" id="~authenticate_user_callback"><span class="type-signature"></span>authenticate_user_callback<span class="signature">(allow, user)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line27">line 27</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Callback for `authenticate_user`.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>allow</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Indicates if the connection should be allowed.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>user</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Indicates if the connection should have a session (authentication was successful).</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+    
+
+    
+        <h3 class="subsection-title">Events</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="event:instance-connection">instance-connection</h4>
+
+    
+
+
+
+
+<dl class="details">
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="SOCKSServer.js.html">SOCKSServer.js</a>, <a href="SOCKSServer.js.html#line157">line 157</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description">
+    Fires when the proxy has made a connection through an instance.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>instance</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="TorProcess.html">TorProcess</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Instance that has been connected to.</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>source</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#InstanceConnectionSource">InstanceConnectionSource</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Details on the source of the connection.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Sep 19 2018 11:21:26 GMT-0400 (Eastern Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/linenumber.js"></script>
+
+
+</body>
+</html>
