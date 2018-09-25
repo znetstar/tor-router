@@ -4,3 +4,5 @@ npm-debug.log
 .vscode
 .DS_Store
 docs
+test
+Gruntfile.js
