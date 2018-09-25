@@ -4,7 +4,7 @@ const assert = require('chai').assert;
 const Promise = require('bluebird');
 const { Provider } = require('nconf');
 const nconf = new Provider();
-const rpc = require('jrpc2');
+const { Client, JSONSerializer, TCPTransport } = require('multi-rpc');
 const getPort = require('get-port');
 const temp = require('temp');
 const fs = require('fs');
@@ -25,22 +25,19 @@ describe('ControlServer - RPC Interface', function () {
 	before('setup control server', async function () {
 		rpcControlPort = await getPort();
 		await rpcControlServer.listen(rpcControlPort);
-		rpcClient = new rpc.Client(new rpc.tcpTransport({ port: rpcControlPort, hostname: 'localhost' }));
-		Promise.promisifyAll(rpcClient);
+		rpcClient = new Client(new TCPTransport(new JSONSerializer(), rpcControlPort));
 	});
 
 	describe('#createInstances(number_of_instances)', function () {
 		this.timeout(WAIT_FOR_CREATE*2);
 		it('should create an instance', async function () {
-			await rpcClient.invokeAsync('createInstances', [{ Name: 'instance-1', Group: "foo" }]);		
+			await rpcClient.invoke('createInstances', [{ Name: 'instance-1', Group: "foo" }]);		
 		});
 	});
 
 	describe('#queryInstanceNames()', function () {
 		it("should have an instance named \"instance-1\"", async function () {
-			let raw = await rpcClient.invokeAsync('queryInstanceNames', [ ]);
-
-			let instances = JSON.parse(raw).result;
+			let instances = await rpcClient.invoke('queryInstanceNames', [ ]);
 
 			assert.deepEqual(instances, [ 'instance-1' ]);
 		});
@@ -48,9 +45,7 @@ describe('ControlServer - RPC Interface', function () {
 
 	describe('#queryGroupNames()', function () {
 		it("should have a group named \"foo\"", async function () {
-			let raw = await rpcClient.invokeAsync('queryGroupNames', [ ]);
-
-			let groups = JSON.parse(raw).result;
+			let groups = await rpcClient.invoke('queryGroupNames', [ ]);
 
 			assert.deepEqual(groups, [ 'foo' ]);
 		});
@@ -58,9 +53,7 @@ describe('ControlServer - RPC Interface', function () {
 
 	describe('#queryInstancesByGroup()', function () {
 		it("should return an instance named \"instance-1\"", async function () {
-			let raw = await rpcClient.invokeAsync('queryInstancesByGroup', [ 'foo' ]);
-
-			let instances = JSON.parse(raw).result;
+			let instances = await rpcClient.invoke('queryInstancesByGroup', [ 'foo' ]);
 
 			assert.equal(instances.length, 1);
 			assert.ok(instances[0]);
@@ -71,9 +64,7 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#queryInstances()', function () {
 		this.timeout(3000);
 		it('should return a list of instances', async function () {
-			let raw = await rpcClient.invokeAsync('queryInstances', []);
-
-			let instances = JSON.parse(raw).result;
+			let instances = await rpcClient.invoke('queryInstances', []);
 
 			assert.isArray(instances, 'Did not return an array');
 			assert.isNotEmpty(instances, 'Returned an empty array');
@@ -88,7 +79,7 @@ describe('ControlServer - RPC Interface', function () {
 				Name: 'instance-2',
 				Group: 'bar'
 			};
-			await rpcClient.invokeAsync('addInstances', [ def ]);
+			await rpcClient.invoke('addInstances', [ def ]);
 		});
 
 		it("tor pool should now contain and instance that has the same name as the name specified in the defintion", function () {
@@ -99,9 +90,7 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#queryInstanceByName(instance_name)', function () {
 		this.timeout(3000);
 		it('should return a single instance by name', async function () {
-			let raw = await rpcClient.invokeAsync('queryInstanceByName', ['instance-1']);
-			
-			let instance = JSON.parse(raw).result;
+			let instance = await rpcClient.invoke('queryInstanceByName', ['instance-1']);
 			
 			assert.isOk(instance);
 		});
@@ -110,9 +99,7 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#queryInstanceAt(index)', function () {
 		this.timeout(3000);
 		it('should return a single instance by index', async function () {
-			let raw = await rpcClient.invokeAsync('queryInstanceAt', [0]);
-			
-			let instance = JSON.parse(raw).result;
+			let instance = await rpcClient.invoke('queryInstanceAt', [0]);
 			
 			assert.isOk(instance);
 		});
@@ -120,7 +107,7 @@ describe('ControlServer - RPC Interface', function () {
 
 	describe('#addInstanceToGroupByName()', function () {
 		it(`should add "instance-1" to baz`, async function () {
-			await rpcClient.invokeAsync('addInstanceToGroupByName', [ 'baz', "instance-1" ]);
+			await rpcClient.invoke('addInstanceToGroupByName', [ 'baz', "instance-1" ]);
 		});
 
 		it('"instance-1" should be added to "baz"', function () {
@@ -134,7 +121,7 @@ describe('ControlServer - RPC Interface', function () {
 
 	describe('#addInstanceToGroupAt()', function () {
 		it(`should add "instance-1" to baz`, async function () {
-			await rpcClient.invokeAsync('addInstanceToGroupAt', [ 'baz', 0 ]);
+			await rpcClient.invoke('addInstanceToGroupAt', [ 'baz', 0 ]);
 		});
 
 		it('"instance-1" should be added to "baz"', function () {
@@ -152,7 +139,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it(`should remove "instance-1" from baz`, async function () {
-			await rpcClient.invokeAsync('removeInstanceFromGroupByName', [ 'baz', "instance-1" ]);
+			await rpcClient.invoke('removeInstanceFromGroupByName', [ 'baz', "instance-1" ]);
 		});
 
 		it('"instance-1" should be remove from to "baz"', function () {
@@ -166,7 +153,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it(`should remove "instance-1" from baz`, async function () {
-			await rpcClient.invokeAsync('removeInstanceFromGroupAt', [ 'baz', 0 ]);
+			await rpcClient.invoke('removeInstanceFromGroupAt', [ 'baz', 0 ]);
 		});
 
 		it('"instance-1" should be remove from to "baz"', function () {
@@ -177,35 +164,35 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#newIdentites()', function () {
 		this.timeout(3000);
 		it('should request new identities for all instances', async function () {
-			await rpcClient.invokeAsync('newIdentites', []);		
+			await rpcClient.invoke('newIdentites', []);		
 		});
 	});
 
 	describe('#newIdentityByName(instance_name)', function () {
 		this.timeout(3000);
 		it('should request new identities for all instances', async function () {
-			await rpcClient.invokeAsync('newIdentityByName', ['instance-1']);		
+			await rpcClient.invoke('newIdentityByName', ['instance-1']);		
 		});
 	});
 
 	describe('#newIdentityAt(index)', function () {
 		this.timeout(3000);
 		it('should request new identities for all instances', async function () {
-			await rpcClient.invokeAsync('newIdentityAt', [0]);		
+			await rpcClient.invoke('newIdentityAt', [0]);		
 		});
 	});
 
 
 	describe('#newIdentitiesByGroup()', function () {
 		it(`should get new identites for all instances in group`, async function () {
-			await rpcClient.invokeAsync('newIdentitiesByGroup', [ 'foo' ]);
+			await rpcClient.invoke('newIdentitiesByGroup', [ 'foo' ]);
 		});
 	});
 
 	describe("#setTorConfig(config_object)", function () {
 		this.timeout(3000);
 		it('should set several config variables on all instances', async function () {
-			await rpcClient.invokeAsync('setTorConfig', [ { TestSocks: 1, ProtocolWarnings: 1 } ]);
+			await rpcClient.invoke('setTorConfig', [ { TestSocks: 1, ProtocolWarnings: 1 } ]);
 		});
 
 		it('all instances should have the modified variables', async function() {
@@ -227,7 +214,7 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#setConfig(key, value)', function () {
 		it('should set the default config of new instances', async function () {
 			this.timeout(3000);
-			await rpcClient.invokeAsync('setConfig', [ 'foo', 'bar' ]);
+			await rpcClient.invoke('setConfig', [ 'foo', 'bar' ]);
 		});
 
 		it('a new instance should be created with the modified property', function () {
@@ -241,7 +228,7 @@ describe('ControlServer - RPC Interface', function () {
 
 	describe('#setTorConfigByGroup()', function () {
 		it(`should set the config value on all instances`, async function () {
-			await rpcClient.invokeAsync('setTorConfigByGroup', [ 'foo', { 'ProtocolWarnings': 1 } ]);
+			await rpcClient.invoke('setTorConfigByGroup', [ 'foo', { 'ProtocolWarnings': 1 } ]);
 		});
 
 		it('all instances should have the config value set', async function () {
@@ -262,8 +249,7 @@ describe('ControlServer - RPC Interface', function () {
 
 		it('should return the property that was set', async function () {
 			this.timeout(6000);
-			let raw = await rpcClient.invokeAsync('getConfig', [ 'foo' ]);
-			let value = JSON.parse(raw).result;
+			let value = await rpcClient.invoke('getConfig', [ 'foo' ]);
 
 			assert.equal(value, 'bar');
 		});
@@ -285,7 +271,7 @@ describe('ControlServer - RPC Interface', function () {
 
 		it('should save the config to the the temp file', async function () {
 			this.timeout(6000);
-			await rpcClient.invokeAsync('saveConfig', []);
+			await rpcClient.invoke('saveConfig', []);
 		});
 
 		it('the temp file should contain the property', async function () {
@@ -318,7 +304,7 @@ describe('ControlServer - RPC Interface', function () {
 
 		it('should load the config from the the temp file', async function () {
 			this.timeout(6000);
-			await rpcClient.invokeAsync('loadConfig', []);
+			await rpcClient.invoke('loadConfig', []);
 		});
 
 		it("the application's config should contain the property", async function () {
@@ -341,8 +327,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('should return the current load balance method', async function () {
-			let raw = await rpcClient.invokeAsync('getLoadBalanceMethod', []);
-			let lb_method = JSON.parse(raw).result;
+			let lb_method = await rpcClient.invoke('getLoadBalanceMethod', []);
 			assert.equal(lb_method, 'round_robin');
 		});
 	});
@@ -351,7 +336,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(3000);
 
 		it('should set the load balance method', async function () {
-			await rpcClient.invokeAsync('setLoadBalanceMethod', ['weighted']);
+			await rpcClient.invoke('setLoadBalanceMethod', ['weighted']);
 		});
 
 		it('the load balance method should be changed', function () {
@@ -371,8 +356,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('should retrieve the property from the tor instance', async function () {
-			let raw = await rpcClient.invokeAsync('getInstanceConfigByName', ['instance-1', "TestSocks"]);		
-			let values = JSON.parse(raw).result;
+			let values = await rpcClient.invoke('getInstanceConfigByName', ['instance-1', "TestSocks"]);
 
 			assert.isNotEmpty(values);
 			assert.equal(values[0], "1");
@@ -391,9 +375,8 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('should retrieve the property from the tor instance', async function () {
-			let raw = await rpcClient.invokeAsync('getInstanceConfigAt', [0, "TestSocks"]);
-			let values = JSON.parse(raw).result;
-
+			let values = await rpcClient.invoke('getInstanceConfigAt', [0, "TestSocks"]);
+			
 			assert.isNotEmpty(values);
 			assert.equal(values[0], "1");
 		});
@@ -411,7 +394,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('should set the property for the tor instance', async function () {
-			await rpcClient.invokeAsync('setInstanceConfigByName', ['instance-1', 'TestSocks', 1]);			
+			await rpcClient.invoke('setInstanceConfigByName', ['instance-1', 'TestSocks', 1]);			
 		});
 
 		it('tor instance should have the modified property', async function () {
@@ -432,7 +415,7 @@ describe('ControlServer - RPC Interface', function () {
 		});
 
 		it('should set the property for the tor instance', async function () {
-			await rpcClient.invokeAsync('setInstanceConfigAt', [0, 'TestSocks', 1]);			
+			await rpcClient.invoke('setInstanceConfigAt', [0, 'TestSocks', 1]);			
 		});
 
 		it('tor instance should have the modified property', async function () {
@@ -448,27 +431,27 @@ describe('ControlServer - RPC Interface', function () {
 	describe('#signalAllInstances(signal)', function () {
 		this.timeout(3000);
 		it('should signal to all interfaces', async function () {
-			await rpcClient.invokeAsync('signalAllInstances', [ 'DEBUG' ]);
+			await rpcClient.invoke('signalAllInstances', [ 'DEBUG' ]);
 		});
 	});
 
 	describe('#signalInstanceAt(signal)', function () {
 		this.timeout(3000);
 		it('should signal to all interfaces', async function () {
-			await rpcClient.invokeAsync('signalInstanceAt', [ 0, 'DEBUG' ]);
+			await rpcClient.invoke('signalInstanceAt', [ 0, 'DEBUG' ]);
 		});
 	});
 
 	describe('#signalAllInstances(signal)', function () {
 		this.timeout(3000);
 		it('should signal to all interfaces', async function () {
-			await rpcClient.invokeAsync('signalInstanceByName', [ 'instance-1', 'DEBUG' ]);
+			await rpcClient.invoke('signalInstanceByName', [ 'instance-1', 'DEBUG' ]);
 		});
 	});
 
 	describe('#signalInstancesByGroup()', function () {
 		it(`should get new identites for all instances in group`, async function () {
-			await rpcClient.invokeAsync('signalInstancesByGroup', [ 'foo', 'DEBUG' ]);
+			await rpcClient.invoke('signalInstancesByGroup', [ 'foo', 'DEBUG' ]);
 		});
 	});
 
@@ -477,7 +460,7 @@ describe('ControlServer - RPC Interface', function () {
 		let instance_name;
 		it('should rotate the 0th item in the instances array', async function () {
 			instance_name = rpcControlServer.tor_pool.instances[0].instance_name;
-			await rpcClient.invokeAsync('nextInstance', []);					
+			await rpcClient.invoke('nextInstance', []);					
 		});
 
 		it('0th item in the instances array should be different after nextInstance is called', function () {
@@ -493,7 +476,7 @@ describe('ControlServer - RPC Interface', function () {
 		it('should rotate the instances in group "foo"', async function () {
 			this.timeout(5000);
 			let first_instance_name_before = rpcControlServer.tor_pool.groups['foo'][0].instance_name;
-			await rpcClient.invokeAsync('nextInstanceByGroup', [ 'foo' ]);		
+			await rpcClient.invoke('nextInstanceByGroup', [ 'foo' ]);		
 			let first_instance_name_after = rpcControlServer.tor_pool.groups['foo'][0].instance_name;
 			
 			assert.notEqual(first_instance_name_after, first_instance_name_before);
@@ -509,7 +492,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(10000);
 		it("should remove an instance at the position specified", async function () {
 			instance_num1 = rpcControlServer.tor_pool.instances.length;
-			await rpcClient.invokeAsync('removeInstanceAt', [0]);
+			await rpcClient.invoke('removeInstanceAt', [0]);
 		});
 
 		it('the tor pool should contain one instance fewer', function () {
@@ -521,7 +504,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(10000);
 		it("should remove an instance at the position specified", async function () {
 			instance_num2 = rpcControlServer.tor_pool.instances.length;
-			await rpcClient.invokeAsync('removeInstanceByName', [ "instance-1" ]);
+			await rpcClient.invoke('removeInstanceByName', [ "instance-1" ]);
 		});
 
 		it('the tor pool should contain one instance fewer', function () {
@@ -533,7 +516,7 @@ describe('ControlServer - RPC Interface', function () {
 		this.timeout(10000);
 		it('should shutdown all instances', async function () {
 			instance_num = rpcControlServer.tor_pool.instances.length;
-			await rpcClient.invokeAsync('closeInstances', [ ]);	
+			await rpcClient.invoke('closeInstances', [ ]);	
 		});
 
 		it('no instances should be present in the pool', function () {

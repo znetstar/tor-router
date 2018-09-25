@@ -41,7 +41,7 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>const rpc = require('jrpc2');
+            <pre class="prettyprint source linenums"><code>const { Server, WebSocketTransport, TCPTransport, JSONSerializer } = require("multi-rpc");
 const Promise = require('bluebird');
 
 const SOCKSServer = require('./SOCKSServer');
@@ -94,38 +94,40 @@ class ControlServer {
 		/**
 		 * RPC Server instance
 		 * 
-		 * @type {rpc.Server}
+		 * @type {Server}
 		 */
-		let server = this.server = new rpc.Server();
+		let server = this.server = new Server();
 
-		server.expose('createTorPool', this.createTorPool.bind(this));
-		server.expose('createSOCKSServer', this.createSOCKSServer.bind(this));
-		server.expose('createDNSServer', this.createDNSServer.bind(this));
-		server.expose('createHTTPServer', this.createHTTPServer.bind(this));
+		this.serializer = new JSONSerializer();
+
+		this.server.methods.createTorPool = this.createTorPool.bind(this);
+		this.server.methods.createSocksServer = this.createSOCKSServer.bind(this);
+		this.server.methods.createDNSServer = this.createDNSServer.bind(this);
+		this.server.methods.createHTTPServer =  this.createHTTPServer.bind(this);
 		
 		/**
 		 * Returns a list of all instances currently in the pool.
 		 */
-		server.expose('queryInstances', (() => {
+		this.server.methods.queryInstances = (() => {
 			return this.tor_pool.instances.map(ControlServer.instance_info);
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Returns information on an instance identified by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('queryInstanceByName', ((instance_name) => {
+		this.server.methods.queryInstanceByName = ((instance_name) => {
 			let instance = this.tor_pool.instance_by_name(instance_name);
 
 			if (!instance)
 				throw new Error(`Instance "${instance_name}"" does not exist`);
 
 			return ControlServer.instance_info(instance);	
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Returns information on an instance identified by its index in the pool.
 		 */
-		server.expose('queryInstanceAt', ((index) => {
+		this.server.methods.queryInstanceAt = ((index) => {
 			if (!this.tor_pool)
 				throw new Error('No pool created');
 
@@ -135,228 +137,228 @@ class ControlServer {
 				throw new Error(`Instance at "${i}"" does not exist`);
 
 			return ControlServer.instance_info(this.tor_pool.instance_at(index));	
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Returns a list of the names of all of the instances in the pool.
 		 */
-		server.expose('queryInstanceNames', (() => this.tor_pool.instance_names).bind(this));
+		this.server.methods.queryInstanceNames = (() => this.tor_pool.instance_names).bind(this);
 	
 		/**
 		 * Returns a list of the names of all of the current groups.
 		 */
-		server.expose('queryGroupNames', (() => Array.from(this.tor_pool.group_names)).bind(this));
+		this.server.methods.queryGroupNames = (() => Array.from(this.tor_pool.group_names)).bind(this);
 
 		/**
 		 * Returns a list of the instances that exist in a given group.
 		 */
-		server.expose('queryInstancesByGroup', ((group) => this.tor_pool.instances_by_group(group).map(ControlServer.instance_info)).bind(this));
+		this.server.methods.queryInstancesByGroup = ((group) => this.tor_pool.instances_by_group(group).map(ControlServer.instance_info)).bind(this);
 
 		/**
 		 * Creates instances from a number, an array of instance definitions or a single instance definition. 
 		 * If a number is provided, creates n many instances.
 		 */
-		server.expose('createInstances', (async (instances_to_create) => {
+		this.server.methods.createInstances = (async (instances_to_create) => {
 			let instances = await this.tor_pool.create(instances_to_create);
 
 			return instances.map(ControlServer.instance_info);
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Creates instances from an array of instance definitions or a single instance definition.
 		 */
-		server.expose('addInstances', (async (defs) => {
+		this.server.methods.addInstances = (async (defs) => {
 			let instances = await this.tor_pool.add(defs);
 
 			return instances.map(ControlServer.instance_info);
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Removes a number of instances from the pool.
 		 */
-		server.expose('removeInstances', this.tor_pool.remove.bind(this.tor_pool));
+		this.server.methods.removeInstances = this.tor_pool.remove.bind(this.tor_pool);
 
 		/**
 		 * Remove an instance at the index provided from the pool.
 		 */
-		server.expose('removeInstanceAt', this.tor_pool.remove_at.bind(this.tor_pool));
+		this.server.methods.removeInstanceAt =  this.tor_pool.remove_at.bind(this.tor_pool);
 
 		/**
 		 * Remove an instance from the pool by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('removeInstanceByName', this.tor_pool.remove_by_name.bind(this.tor_pool));
+		this.server.methods.removeInstanceByName = this.tor_pool.remove_by_name.bind(this.tor_pool);
 
 		/**
 		 * Gets new identities for all instances in the pool.
 		 */
-		server.expose('newIdentites', this.tor_pool.new_identites.bind(this.tor_pool));
+		this.server.methods.newIdentites = this.tor_pool.new_identites.bind(this.tor_pool);
 
 		/**
 		 * Get a new identity for the instance at the index provided in the pool.
 		 */
-		server.expose('newIdentityAt', this.tor_pool.new_identity_at.bind(this.tor_pool));
+		this.server.methods.newIdentityAt = this.tor_pool.new_identity_at.bind(this.tor_pool);
 
 		/**
 		 * Get a new identity for the instance by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('newIdentityByName', this.tor_pool.new_identity_by_name.bind(this.tor_pool));
+		this.server.methods.newIdentityByName =  this.tor_pool.new_identity_by_name.bind(this.tor_pool);
 
 		/**
 		 * Gets new identities for all instances in the group.
 		 */
-		server.expose('newIdentitiesByGroup', this.tor_pool.new_identites_by_group.bind(this.tor_pool));
+		this.server.methods.newIdentitiesByGroup = this.tor_pool.new_identites_by_group.bind(this.tor_pool);
 
 		/**
 		 * Gets the next instance in the pool using the load balance method.
 		 */
-		server.expose('nextInstance', (() => ControlServer.instance_info(this.tor_pool.next())).bind(this));
+		this.server.methods.nextInstance = (() => ControlServer.instance_info(this.tor_pool.next())).bind(this);
 
 		/**
 		 * Gets the next instance in the group using the load balance method.
 		 */
-		server.expose('nextInstanceByGroup', ((group) => {
+		this.server.methods.nextInstanceByGroup =  ((group) => {
 			return ControlServer.instance_info(this.tor_pool.next_by_group(group));
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Kills the processes of all instances in the pool.
 		 */
-		server.expose('closeInstances', this.tor_pool.exit.bind(this.tor_pool));
+		this.server.methods.closeInstances = this.tor_pool.exit.bind(this.tor_pool);
 
 		/**
 		 * Sets a property in the application configuration.
 		 */
-		server.expose('setConfig', ((key, value) => {
+		this.server.methods.setConfig = ((key, value) => {
 			this.nconf.set(key, value);
-		}).bind(this));	
+		}).bind(this);	
 	
 		/**
 		 * Gets a property in the application configuration.
 		 */
-		server.expose('getConfig', ((key) => {
+		this.server.methods.getConfig = ((key) => {
 			return this.nconf.get(key);
-		}).bind(this));	
+		}).bind(this);
 
 		/**
 		 * Saves the application configuration to the underlying store (usually a JSON file).
 		 */
-		server.expose('saveConfig', (async () => {
+		this.server.methods.saveConfig = (async () => {
 			await new Promise((resolve, reject) => {
 				this.nconf.save((err) => {
 					if (err) return reject(err);
 					resolve();
 				});
 			});
-		}).bind(this));	
+		}).bind(this);	
 
 		/**
 		 * Loads the application configuration from the underlying store (usually a JSON file).
 		 */
-		server.expose('loadConfig', (async () => {
+		this.server.methods.loadConfig = (async () => {
 			await new Promise((resolve, reject) => {
 				this.nconf.load((err) => {
 					if (err) return reject(err);
 					resolve();
 				});
 			});
-		}).bind(this));	
+		}).bind(this);	
 
 		/**
 		 * Sets a configuration property on all instances in the pool.
 		 */
-		server.expose('setTorConfig', (async (config) => {
+		this.server.methods.setTorConfig = (async (config) => {
 			await Promise.all(Object.keys(config).map((key) => {
 				let value = config[key];
 
 				return this.tor_pool.set_config_all(key, value);
 			}));
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Sets a configuration property on all instances in a group.
 		 */
-		server.expose('setTorConfigByGroup', (async (group, config) => {
+		this.server.methods.setTorConfigByGroup = (async (group, config) => {
 			await Promise.all(Object.keys(config).map((key) => {
 				let value = config[key];
 
 				return this.tor_pool.set_config_by_group(group, key, value);
 			}));
-		}).bind(this));
+		}).bind(this);
 
 		/**
 		 * Retrieves the current load balance method for the pool
 		 */
-		server.expose('getLoadBalanceMethod', (() => {
+		this.server.methods.getLoadBalanceMethod = (() => {
 			return this.tor_pool.load_balance_method;
-		}).bind(this));	
+		}).bind(this);	
 
 		/**
 		 * Sets the current load balance method for the pool
 		 */
-		server.expose('setLoadBalanceMethod', ((loadBalanceMethod) => {
+		this.server.methods.setLoadBalanceMethod = ((loadBalanceMethod) => {
 			this.tor_pool.load_balance_method = loadBalanceMethod;
 			this.nconf.set('loadBalanceMethod', loadBalanceMethod);
-		}).bind(this));	
+		}).bind(this);	
 
 		/**
 		 * Retrieve a configuration property for an instance identified by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('getInstanceConfigByName', this.tor_pool.get_config_by_name.bind(this.tor_pool));	
+		this.server.methods.getInstanceConfigByName =  this.tor_pool.get_config_by_name.bind(this.tor_pool);	
 
 		/**
 		 * Retrieves a configuration property for an instance by its index in the pool.
 		 */
-		server.expose('getInstanceConfigAt', this.tor_pool.get_config_at.bind(this.tor_pool));	
+		this.server.methods.getInstanceConfigAt = this.tor_pool.get_config_at.bind(this.tor_pool);	
 
 		/**
 		 * Sets a configuration property for an instance identified by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('setInstanceConfigByName', this.tor_pool.set_config_by_name.bind(this.tor_pool));
+		this.server.methods.setInstanceConfigByName = this.tor_pool.set_config_by_name.bind(this.tor_pool);
 
 		/**
 		 * Sets a configuration property for an instance identified by its index in the pool.
 		 */
-		server.expose('setInstanceConfigAt', this.tor_pool.set_config_at.bind(this.tor_pool));
+		this.server.methods.setInstanceConfigAt = this.tor_pool.set_config_at.bind(this.tor_pool);
 
 		/**
 		 * Sends a signal to all instances in the pool
 		 */
-		server.expose('signalAllInstances', this.tor_pool.signal_all.bind(this.tor_pool));
+		this.server.methods.signalAllInstances = this.tor_pool.signal_all.bind(this.tor_pool);
 	
 		/**
 		 * Sends a signal to an instance identified by its index in the pool.
 		 */
-		server.expose('signalInstanceAt', this.tor_pool.signal_at.bind(this.tor_pool));
+		this.server.methods.signalInstanceAt = this.tor_pool.signal_at.bind(this.tor_pool);
 
 		/**
 		 * Sends a signal to an instance identified by the {@link TorProcess#instance_name} field.
 		 */
-		server.expose('signalInstanceByName', this.tor_pool.signal_by_name.bind(this.tor_pool));
+		this.server.methods.signalInstanceByName = this.tor_pool.signal_by_name.bind(this.tor_pool);
 
 		/**
 		 * Sends a singal to all instances in a group.
 		 */
-		server.expose('signalInstancesByGroup', this.tor_pool.signal_by_group.bind(this.tor_pool));
+		this.server.methods.signalInstancesByGroup = this.tor_pool.signal_by_group.bind(this.tor_pool);
 
 		/**
 		 * Adds an instance to a group identified by its {@link TorProcess#instance_name} field.
 		 */
-		server.expose('addInstanceToGroupByName', this.tor_pool.add_instance_to_group_by_name.bind(this.tor_pool));
+		this.server.methods.addInstanceToGroupByName = this.tor_pool.add_instance_to_group_by_name.bind(this.tor_pool);
 		
 		/**
 		 * Adds an instance to a group identified by its index in the pool.
 		 */
-		server.expose('addInstanceToGroupAt', this.tor_pool.add_instance_to_group_at.bind(this.tor_pool));
+		this.server.methods.addInstanceToGroupAt = this.tor_pool.add_instance_to_group_at.bind(this.tor_pool);
 
 		/**
 		 * Removes an instance from a group identified by its {@link TorProcess#instance_name} field.
 		 */
-		server.expose('removeInstanceFromGroupByName', this.tor_pool.remove_instance_from_group_by_name.bind(this.tor_pool));
+		this.server.methods.removeInstanceFromGroupByName = this.tor_pool.remove_instance_from_group_by_name.bind(this.tor_pool);
 		
 		/**
 		 * Remove an instance from a group identified by its index in the pool.
 		 */
-		server.expose('removeInstanceFromGroupAt', this.tor_pool.remove_instance_from_group_at .bind(this.tor_pool));
+		this.server.methods.removeInstanceFromGroupAt = this.tor_pool.remove_instance_from_group_at .bind(this.tor_pool);
 	}
 
 	/**
@@ -385,9 +387,10 @@ class ControlServer {
 	 * @returns {Promise}
 	 */
 	async listenTcp(port, hostname) {  
-		this.tcpTransport = new rpc.tcpTransport({ port, hostname });
-		this.tcpTransport.listen(this.server);
-        this.logger.info(`[control]: control server listening on tcp://${hostname}:${port}`);
+		this.tcpTransport = new TCPTransport(this.serializer, port, hostname);
+		this.server.addTransport(this.tcpTransport);
+		this.logger.info(`[control]: control server listening on tcp://${hostname}:${port}`);
+		await this.tcpTransport.listen();
 	}
 
 	/**
@@ -398,9 +401,10 @@ class ControlServer {
 	 * @returns {Promise}
 	 */
 	async listenWs(port, hostname) {
-		this.wsTransport = new rpc.wsTransport({ port, hostname });
-		this.wsTransport.listen(this.server);
+		this.wsTransport = new WebSocketTransport(this.serializer, port, hostname);
+		this.server.addTransport(this.wsTransport);
 		this.logger.info(`[control]: control server listening on ws://${hostname}:${port}`);
+		await this.wsTransport.listen();
 	}
 
 	/**
@@ -416,10 +420,7 @@ class ControlServer {
 	 * Closes the TCP and/or WebSocket servers
 	 */
 	close() { 
-		if (this.tcpTransport &amp;&amp; this.tcpTransport.tcpServer)
-			this.tcpTransport.tcpServer.close();
-		if (this.wsTransport &amp;&amp; this.wsTransport.httpServer)
-			this.wsTransport.httpServer.close();
+		this.server.close();
 	}
 
 	/**
@@ -494,7 +495,7 @@ module.exports = ControlServer;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Wed Sep 19 2018 11:21:26 GMT-0400 (Eastern Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Sep 25 2018 12:39:16 GMT-0400 (Eastern Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

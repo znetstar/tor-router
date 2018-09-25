@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.4] - 2018-09-24
+### Changed
+- Replaces `jrpc2` with `multi-rpc` for providing the RPC Interface. No changes to the application or API.
+
 ## [4.0.3] - 2018-09-15
 
 ### Changed
