@@ -38,7 +38,7 @@
     "granax": "^3.1.4",
     "js-weighted-list": "^0.1.1",
     "lodash": "^4.17.4",
-    "multi-rpc": "^1.0.4",
+    "multi-rpc": "^1.0.5",
     "nanoid": "^1.2.3",
     "native-dns": "git+https://github.com/znetstar/node-dns.git#336f1d3027b2a3da719b5cd65380219267901aeb",
     "nconf": "^0.10.0",
