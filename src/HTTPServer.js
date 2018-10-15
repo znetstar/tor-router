@@ -147,6 +147,12 @@ class HTTPServer extends Server {
 
 			let buffer = [];
 
+			const onError = (err) => {
+				this.logger.error("[http-proxy]: an error occured: "+err.message);
+				res.writeHead(500);
+				res.end();
+			}
+
 			function onIncomingData(chunk) {
 				buffer.push(chunk);
 			}
@@ -157,26 +163,26 @@ class HTTPServer extends Server {
 
 			req.on('data', onIncomingData);
 			req.on('end', preConnectClosed);
-			req.on('error', function (err) {
-				this.logger.error("[http-proxy]: an error occured: "+err.message);
-			});
+			req.on('error', onError);
 
 			let connect = (tor_instance) => {
 				let source = { hostname: req.connection.remoteAddress, port: req.connection.remotePort, proto: 'http', by_name: Boolean(instance) };
 				let socks_port = tor_instance.socks_port;
 				
+				const agent =  socks.HttpAgent({
+					proxyHost: '127.0.0.1',
+					proxyPort: socks_port,
+					auths: [ socks.auth.None() ],
+					localDNS: false
+				});
+
 				let proxy_req = http.request({
 					method: req.method,
 					hostname: url.hostname, 
 					port: url.port,
 					path: url.path,
 					headers: req.headers,
-					agent: socks.HttpAgent({
-						proxyHost: '127.0.0.1',
-						proxyPort: socks_port,
-						auths: [ socks.auth.None() ],
-						localDNS: false
-					})
+					agent
 				}, (proxy_res) => {
 					/**
 					 * Fires when the proxy has made a connection through an instance using HTTP or HTTP-Connect.
@@ -199,6 +205,8 @@ class HTTPServer extends Server {
 					res.writeHead(proxy_res.statusCode, proxy_res.headers);
 				});
 
+				proxy_req.on("error", onError);
+				
 				req.removeListener('data', onIncomingData);
 
 				req.on('data', (chunk) => {
@@ -271,7 +279,7 @@ class HTTPServer extends Server {
 				inbound_socket.on('error', onClose);
 				inbound_socket.on('close', onClose);
 
-				socks.connect({
+				const client = socks.connect({
 					host: hostname,
 					port: port,
 					proxyHost: '127.0.0.1',
@@ -292,6 +300,8 @@ class HTTPServer extends Server {
 					outbound_socket.pipe(inbound_socket);
 					inbound_socket.pipe(outbound_socket);
 				});
+
+				client.on('error', onClose);	
 			};
 
 			if (instance) {

@@ -132,7 +132,7 @@ async function main(nconf, logger) {
         }
 
         if (error instanceof Error) {
-            logger.error(`[global]: error shutting down: ${error.message}`);
+            logger.error(`[global]: ${error.stack || 'An unknown error occured'}`);
         } else {
             error = 0;
         }

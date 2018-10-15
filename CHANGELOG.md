@@ -1,13 +1,17 @@
 # Changelog
 
+## [4.0.5] - 2018-10-15
+### Changed
+- Prevents errors that occur when connecting to the destination in the SOCKS Proxy and HTTP Proxy from crashing the applications
+
 ## [4.0.4] - 2018-09-24
 ### Changed
-- Replaces `jrpc2` with `multi-rpc` for providing the RPC Interface. No changes to the application or API.
+- Replaces `jrpc2` with `multi-rpc` for providing the RPC Interface. No changes to the application or API
 
 ## [4.0.3] - 2018-09-15
 
 ### Changed
-- References granax in `default_config.js` to comply with licensing requirements.
+- References granax in `default_config.js` to comply with licensing requirements
 
 ## [4.0.2] - 2018-09-15
 

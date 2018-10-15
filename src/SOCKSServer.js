@@ -146,7 +146,7 @@ class SOCKSServer extends Server{
 				let source = { hostname: info.srcAddr, port: info.srcPort, proto: 'socks', by_name: Boolean(instance) };
 				let socks_port = tor_instance.socks_port;
 
-				socks.connect({
+				let client = socks.connect({
 					host: info.dstAddr,
 					port: info.dstPort,
 					proxyHost: '127.0.0.1',
@@ -182,6 +182,8 @@ class SOCKSServer extends Server{
 						outbound_socket.write(buffer.shift());
 					}
 				});
+
+				client.on('error', onClose);
 			};
 			
 			if (instance) {
