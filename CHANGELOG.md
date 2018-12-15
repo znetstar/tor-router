@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.6] - 2018-12-14
+### Changed
+- Updates `multi-rpc` to version 1.1.1.
+
 ## [4.0.5] - 2018-10-15
 ### Changed
 - Prevents errors that occur when connecting to the destination in the SOCKS Proxy and HTTP Proxy from crashing the applications
