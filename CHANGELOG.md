@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.11] - 2019-01-15
+### Changed
+- Updates `multi-rpc` to version 1.5.5.
+
 ## [4.0.10] - 2018-12-14
 ### Changed
 - Updates `multi-rpc` to version 1.4.1.
