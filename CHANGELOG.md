@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.12] - 2019-11-21
+### Added
+- Added a entrypoint file so the node.js process is not the root process, so it responds to SIGINT calls (Ctrl+C).
+
 ## [4.0.11] - 2019-01-15
 ### Changed
 - Updates `multi-rpc` to version 1.5.5.

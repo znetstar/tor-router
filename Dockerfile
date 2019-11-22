@@ -20,7 +20,9 @@ USER tor_router
 
 ADD package.json /app/package.json
 
-RUN npm install 
+ADD package-lock.json /app/package-lock.json
+
+RUN npm ci 
 
 ADD . /app
 
@@ -28,6 +30,6 @@ ENV HOME /home/tor_router
 
 EXPOSE 9050 9053 9077
 
-ENTRYPOINT [ "tor-router" ]
+ENTRYPOINT [ "/bin/bash", "/app/docker-entrypoint.sh" ]
 
 CMD [ "-s", "-d", "-j", "1" ]

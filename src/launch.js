@@ -148,6 +148,7 @@ async function main(nconf, logger) {
 
     process.on('exit', cleanUp);
     process.on('SIGINT', cleanUp);
+    process.on('SIGTERM', cleanUp);
     process.on('uncaughtException', cleanUp.bind({ handleError: true }));
 }
 
