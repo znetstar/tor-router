@@ -1,6 +1,6 @@
 {
   "name": "tor-router",
-  "version": "4.0.12",
+  "version": "4.0.13",
   "main": "src/index.js",
   "repository": "git@github.com:znetstar/tor-router.git",
   "author": "Zachary Boyd <zachary@zacharyboyd.nyc>",
@@ -31,11 +31,11 @@
     "socks-proxy-agent": "^4.0.1"
   },
   "dependencies": {
+    "@deadcanaries/granax": "^3.2.4",
     "bluebird": "^3.5.2",
     "del": "^3.0.0",
     "eventemitter3": "^3.1.0",
     "get-port": "^2.1.0",
-    "granax": "^3.1.4",
     "js-weighted-list": "^0.1.1",
     "lodash": "^4.17.4",
     "multi-rpc": "^1.5.5",

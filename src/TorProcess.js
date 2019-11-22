@@ -13,7 +13,7 @@ const shell = require('shelljs');
 const getPort = require('get-port');
 const del = require('del');
 const temp = require('temp');
-const { TorController } = require('granax');
+const { TorController } = require('@deadcanaries/granax');
 const nanoid = require("nanoid");
 const winston = require('winston');
 Promise.promisifyAll(temp);

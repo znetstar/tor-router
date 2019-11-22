@@ -1,5 +1,9 @@
 # Changelog
 
+## [4.0.13] - 2019-11-21
+### Changed
+- Switched 'granax' package to '@deadcanaries/granax' as suggested in [issue 12](https://zb.gy/2z).
+
 ## [4.0.12] - 2019-11-21
 ### Added
 - Added a entrypoint file so the node.js process is not the root process, so it responds to SIGINT calls (Ctrl+C).

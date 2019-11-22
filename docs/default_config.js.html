@@ -64,7 +64,7 @@ module.exports = {
 		"Log": "notice stdout",
 		"NewCircuitPeriod": "10"
 	},
-	"torPath": require('granax').tor(require('os').platform()),
+	"torPath": require('@deadcanaries/granax').tor(require('os').platform()),
 	"instances": null,
 	"dns": {
 		"timeout": 10000,
