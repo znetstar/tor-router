@@ -52,6 +52,7 @@ class TorProcess extends EventEmitter {
 		definition.Config = definition.Config || {};
 
 		this._definition = definition;
+		this._ports = definition.ports || {};
 
 		/**
 		 * Path to the Tor executable.
@@ -263,10 +264,12 @@ class TorProcess extends EventEmitter {
 	 * @returns {Promise<ChildProcess>} - The process that has been created.
 	 */
 	async create() {
-		this._ports = {};
-		let dnsPort = this._ports.dns_port = await getPort();
-		let socksPort = this._ports.socks_port =  await getPort();
-		let controlPort = this._ports.control_port = await getPort();
+		let dnsPort = this._ports.dns_port || await getPort();
+		let socksPort = this._ports.socks_port || await getPort();
+		let controlPort = this._ports.control_port || await getPort();
+		this.logger.info(`[tor-${this.instance_name}]: DNS PORT = ${dnsPort}`);
+		this.logger.info(`[tor-${this.instance_name}]: SOCKS PORT = ${socksPort}`);
+		this.logger.info(`[tor-${this.instance_name}]: CONTROL PORT = ${controlPort}`);
 		Object.freeze(this._ports);
 
 		let options = {
@@ -403,7 +406,7 @@ class TorProcess extends EventEmitter {
 				 * @returns {Error}
 				 */
 				this.emit('error', new Error(msg));
-				this.logger.error(`[tor-${this.instance_name}]: ${msg}`);
+				this.logger.error(`[tor-${this.instance_name}]: ${text}`);
 			}
 
 			else if (text.indexOf('[notice]') !== -1) {
