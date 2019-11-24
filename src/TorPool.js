@@ -27,7 +27,9 @@ const Promise = require("bluebird");
 const _ = require('lodash');
 const WeightedList = require('js-weighted-list');
 
+const getPort = require('get-port');
 const TorProcess = require('./TorProcess');
+const { Mutex } = require('async-mutex');
 
 Promise.promisifyAll(fs);
 
@@ -462,6 +464,19 @@ class TorPool extends EventEmitter {
 		
 		if (typeof(instances) === 'number') {
 			instances = Array.from(Array(instances)).map(() => ({}));
+			const lock = new Mutex();
+			instances = await Promise.all(instances.map(async(instance) => {
+				instance.ports = {};
+				let release = await lock.acquire();
+				try {
+					instance.ports.dns_port = await getPort();
+					instance.ports.socks_port = await getPort();
+					instance.ports.control_port = await getPort();
+				} finally {
+					release();
+				}
+				return instance;
+			}));
 		}
 		return await this.add(instances);
 	}
