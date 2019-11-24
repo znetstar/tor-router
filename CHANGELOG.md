@@ -1,6 +1,8 @@
 # Changelog
 
-## [4.0.13] - 2019-11-21
+## [4.0.13] - 2019-11-23
+### Added
+- Added a mechanism to handle dynamically allocating numerous ports at the same time without collisions per [jogli5er's](https://github.com/jogli5er) suggestion in [PR 15](https://zb.gy/3a).
 ### Changed
 - Switched 'granax' package to '@deadcanaries/granax' as suggested in [issue 12](https://zb.gy/2z).
 

@@ -31,12 +31,9 @@
     "socks-proxy-agent": "^4.0.1"
   },
   "dependencies": {
-<<<<<<< HEAD
     "@deadcanaries/granax": "^3.2.4",
-=======
     "arrify": "^2.0.1",
     "async-mutex": "^0.1.4",
->>>>>>> 37a58f929a6088b5635b883b43487d0ebdd30adf
     "bluebird": "^3.5.2",
     "del": "^3.0.0",
     "eventemitter3": "^3.1.0",
