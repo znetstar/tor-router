@@ -43,7 +43,7 @@
     "multi-rpc": "^1.5.5",
     "nanoid": "^1.2.3",
     "native-dns": "git+https://github.com/znetstar/node-dns.git#336f1d3027b2a3da719b5cd65380219267901aeb",
-    "nconf": "^0.10.0",
+    "nconf": "^0.11.4",
     "shelljs": "^0.8.2",
     "socksv5": "git+https://github.com/znetstar/socksv5.git#1480422215cf1464fa06f5aec4a3e7f2117e3403",
     "temp": "^0.8.3",
